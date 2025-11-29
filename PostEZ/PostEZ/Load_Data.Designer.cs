@@ -37,6 +37,7 @@
             ClientSize = new Size(800, 450);
             Name = "Load_Data";
             Text = "Load Data";
+            Load += Load_Data_Load;
             ResumeLayout(false);
         }
 
