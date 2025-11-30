@@ -11,6 +11,7 @@ using System.Windows.Forms;
 using System.Net.Http;
 using System.IO;
 using System.Text.RegularExpressions;
+using PostEZ.Main;
 
 namespace PostEZ.Log
 {
@@ -120,6 +121,9 @@ namespace PostEZ.Log
             if (tb_username.Text == "Admin123" && tb_password.Text == "Admin123!")
             {
                 MessageBox.Show("Đăng nhập thành công!", "Thành công");
+                Dashboard dashboardForm = new Dashboard();
+                this.Hide();
+                dashboardForm.ShowDialog();
             }
             else
             {
