@@ -26,13 +26,14 @@ namespace PostEZ
         // ============================================
         // TCP CONNECTION VARIABLES
         // ============================================
-        private bool _isRunning = true;
-        private TcpClient _client;
-        private NetworkStream _stream;
-        private StreamReader _reader;
-        private StreamWriter _writer;
-        private string _host = "163.61.110.135";
-        private int _port = 12000;
+        private static bool _isRunning = true;
+        private static TcpClient _client;
+        private static NetworkStream _stream;
+        private static StreamReader _reader;
+        private static StreamWriter _writer;
+        private static readonly object _writeLock = new object();  // ← STATIC
+        private static string _host = "160.191.245.144";
+        private static int _port = 13579;
 
 
 
@@ -66,22 +67,144 @@ namespace PostEZ
             this.Hide();
             login.ShowDialog();
         }
-        void TcpConnect()
+        static void TcpConnect()
         {
             try
             {
-                IPEndPoint serverEndPoint = new IPEndPoint(IPAddress.Parse(_host), _port);
-                Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                socket.Connect(serverEndPoint);
+                _client = new TcpClient();
+                _client.Connect(_host, _port);
+
+                _stream = _client.GetStream();
+                _reader = new StreamReader(_stream, Encoding.UTF8);
+                _writer = new StreamWriter(_stream, Encoding.UTF8) { AutoFlush = true };
+
                 while (_isRunning)
                 {
-                    // đọc json được gửi từ server đến
+                    string line = _reader.ReadLine();   // server gửi JSON + '\n'
+                    if (line == null)
+                    {
+                        // server đóng kết nối
+                        break;
+                    }
+
+                    HandleServerJson(line);
 
                 }
             }
             catch (Exception ex)
             {
                 return;
+            }
+        }
+
+        private static void HandleServerJson(string json)
+        {
+            var obj = JObject.Parse(json);
+            string action = (string)obj["action"];
+            switch (action)
+            {
+                case "post_data":
+                    var postData = JsonConvert.DeserializeObject<Data_PostJson>(json);
+                    if (postData != null)
+                    {
+                        Posts.Add(postData);
+                    }
+                    break;
+                case "comment_previous_post_click":
+                    var commentData = JsonConvert.DeserializeObject<Data_CommentPreviousPostClickJson>(json);
+                    if (commentData != null)
+                    {
+                        Comments.Add(commentData);
+                    }
+                    break;
+                case "login_data":
+                    var loginData = JsonConvert.DeserializeObject<Data_LoginJson>(json);
+                    if (loginData != null)
+                    {
+                        LoginData = loginData;
+                    }
+                    break;
+                case "signup_data":
+                    var signupData = JsonConvert.DeserializeObject<Data_SignupJson>(json);
+                    if (signupData != null)
+                    {
+                        SignupData = signupData;
+                    }
+                    break;
+                case "previous_post_click":
+                    var previousPostClickData = JsonConvert.DeserializeObject<Data_PreviousPostClickJson>(json);
+                    if (previousPostClickData != null)
+                    {
+                        PreviousPostClickData = previousPostClickData;
+                    }
+                    break;
+                default:
+                    // Xử lý các hành động khác nếu cần
+                    break;
+            }
+        }
+
+        public static bool IsConnected()
+        { 
+            try
+            {
+                // TcpClient.Connected có thể trả true dù socket đã bị ngắt ở server side,
+                // nên kiểm tra thêm stream
+                return _client != null && _client.Connected &&
+                       _stream != null && _stream.CanWrite &&
+                       _writer != null;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+        public static bool SendJson(object data)
+        {
+            if (data == null) return false;
+
+            try
+            {
+                if (!IsConnected()) return false;
+
+                string json = JsonConvert.SerializeObject(data);
+
+                lock (_writeLock)
+                {
+                    // _writer được tạo trong TcpConnect với AutoFlush = true,
+                    // nhưng vẫn gọi Flush() để an toàn
+                    _writer.WriteLine(json);
+                    _writer.Flush();
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                // nếu muốn log, dùng PostEZ.Log hoặc Debug.WriteLine
+                // LogManager.Error(ex); // ví dụ
+                return false;
+            }
+        }
+        public static bool SendRawJsonString(string json)
+        {
+            if (string.IsNullOrWhiteSpace(json)) return false;
+
+            try
+            {
+                if (!IsConnected()) return false;
+
+                lock (_writeLock)
+                {
+                    _writer.WriteLine(json);
+                    _writer.Flush();
+                }
+
+                return true;
+            }
+            catch
+            {
+                return false;
             }
         }
 
@@ -103,6 +226,7 @@ namespace PostEZ
             public string username { get; set; }
             public string password { get; set; }
             public bool accept { get; set; }
+            public string request_id { get; set; }
         }
 
         public class Data_SignupJson
@@ -112,6 +236,7 @@ namespace PostEZ
             public string password { get; set; }
             public string email { get; set; }
             public bool accept { get; set; }
+            public string request_id { get; set; }
         }
 
         public class Data_PostJson
@@ -124,6 +249,7 @@ namespace PostEZ
             public string video_url { get; set; }
             public string timestamp { get; set; }
             public bool accept { get; set; }
+            public string request_id { get; set; }
         }
 
         public class Data_CommentPreviousPostClickJson
@@ -135,6 +261,7 @@ namespace PostEZ
             public string comment_content { get; set; }
             public string timestamp { get; set; }
             public bool accept { get; set; }
+            public string request_id { get; set; }
         }
 
         public class Data_PreviousPostClickJson
@@ -147,6 +274,20 @@ namespace PostEZ
             public string video_url { get; set; }
             public string timestamp { get; set; }
             public bool accept { get; set; }
+            public string request_id { get; set; }
+        }
+
+        public class Data_CreateNewPost
+        {
+            public string action { get; set; }
+            public string username { get; set; }
+            public string content { get; set; }
+            public string image_url { get; set; }
+            public string video_url { get; set; }
+            public bool accept { get; set; }
+            public bool delete_post { get; set; }
+            public bool reply_post { get; set; }
+            public string request_id { get; set; }
         }
 
     }

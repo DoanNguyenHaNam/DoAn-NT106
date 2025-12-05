@@ -12,6 +12,7 @@ using System.Net.Http;
 using System.IO;
 using System.Text.RegularExpressions;
 using PostEZ.Main;
+using PostEZ;
 
 namespace PostEZ.Log
 {
@@ -118,7 +119,23 @@ namespace PostEZ.Log
                 MessageBox.Show("Mật khẩu không hợp lệ. Mật khẩu phải từ 6-20 ký tự và bao gồm ít nhất một chữ số và một ký tự đặc biệt (!@#$%...)", "Lỗi");
                 return;
             }
-            if (tb_username.Text == "Admin123" && tb_password.Text == "Admin123!")
+
+            Load_Data.LoginData = new Load_Data.Data_LoginJson
+            {
+                action = "login_data",
+                username = tb_username.Text,
+                password = tb_password.Text,
+
+            };
+            bool success = Load_Data.SendJson(Load_Data.LoginData);
+
+            if (!success)
+            {
+                MessageBox.Show("Không thể gửi dữ liệu tới server!", "Lỗi");
+                return;
+            }
+
+            if (Load_Data.LoginData.accept)
             {
                 MessageBox.Show("Đăng nhập thành công!", "Thành công");
                 Dashboard dashboardForm = new Dashboard();
