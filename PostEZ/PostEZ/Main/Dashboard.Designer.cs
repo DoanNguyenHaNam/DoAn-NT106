@@ -34,9 +34,15 @@
             pic_logo = new PictureBox();
             gb_poss = new GroupBox();
             gb_info = new GroupBox();
+            lb_logout = new Label();
+            lb_countfollower = new Label();
+            lb_countpost = new Label();
+            lb_mail = new Label();
+            lb_username = new Label();
             tb_find = new TextBox();
             groupBox1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pic_logo).BeginInit();
+            gb_info.SuspendLayout();
             SuspendLayout();
             // 
             // groupBox1
@@ -58,6 +64,7 @@
             btn_profile.TabIndex = 2;
             btn_profile.Text = "Trang cá nhân";
             btn_profile.UseVisualStyleBackColor = true;
+            btn_profile.Click += btn_profile_Click;
             // 
             // btn_main
             // 
@@ -79,19 +86,76 @@
             // 
             // gb_poss
             // 
-            gb_poss.Location = new Point(153, 48);
+            gb_poss.Location = new Point(153, 64);
             gb_poss.Name = "gb_poss";
-            gb_poss.Size = new Size(469, 390);
+            gb_poss.Size = new Size(469, 374);
             gb_poss.TabIndex = 6;
             gb_poss.TabStop = false;
             // 
             // gb_info
             // 
+            gb_info.Controls.Add(lb_logout);
+            gb_info.Controls.Add(lb_countfollower);
+            gb_info.Controls.Add(lb_countpost);
+            gb_info.Controls.Add(lb_mail);
+            gb_info.Controls.Add(lb_username);
             gb_info.Location = new Point(628, 12);
             gb_info.Name = "gb_info";
             gb_info.Size = new Size(160, 426);
             gb_info.TabIndex = 7;
             gb_info.TabStop = false;
+            gb_info.Enter += gb_info_Enter;
+            // 
+            // lb_logout
+            // 
+            lb_logout.AutoSize = true;
+            lb_logout.Font = new Font("Segoe UI", 12F);
+            lb_logout.Location = new Point(6, 220);
+            lb_logout.Name = "lb_logout";
+            lb_logout.Size = new Size(80, 21);
+            lb_logout.TabIndex = 4;
+            lb_logout.Text = "Đăng xuất";
+            lb_logout.Click += lb_logout_Click;
+            // 
+            // lb_countfollower
+            // 
+            lb_countfollower.AutoSize = true;
+            lb_countfollower.Font = new Font("Segoe UI", 9F);
+            lb_countfollower.Location = new Point(6, 107);
+            lb_countfollower.Name = "lb_countfollower";
+            lb_countfollower.Size = new Size(101, 15);
+            lb_countfollower.TabIndex = 3;
+            lb_countfollower.Text = "Số người theo dõi";
+            // 
+            // lb_countpost
+            // 
+            lb_countpost.AutoSize = true;
+            lb_countpost.Font = new Font("Segoe UI", 9F);
+            lb_countpost.Location = new Point(6, 80);
+            lb_countpost.Name = "lb_countpost";
+            lb_countpost.Size = new Size(69, 15);
+            lb_countpost.TabIndex = 2;
+            lb_countpost.Text = "Số bài đăng";
+            // 
+            // lb_mail
+            // 
+            lb_mail.AutoSize = true;
+            lb_mail.Font = new Font("Segoe UI", 9F);
+            lb_mail.Location = new Point(6, 52);
+            lb_mail.Name = "lb_mail";
+            lb_mail.Size = new Size(30, 15);
+            lb_mail.TabIndex = 1;
+            lb_mail.Text = "Mail";
+            // 
+            // lb_username
+            // 
+            lb_username.AutoSize = true;
+            lb_username.Font = new Font("Segoe UI", 12F);
+            lb_username.Location = new Point(6, 21);
+            lb_username.Name = "lb_username";
+            lb_username.Size = new Size(81, 21);
+            lb_username.TabIndex = 0;
+            lb_username.Text = "Username";
             // 
             // tb_find
             // 
@@ -99,6 +163,7 @@
             tb_find.Name = "tb_find";
             tb_find.Size = new Size(469, 23);
             tb_find.TabIndex = 8;
+            tb_find.TextChanged += tb_find_TextChanged;
             // 
             // Dashboard
             // 
@@ -114,6 +179,8 @@
             Load += Dashboard_Load;
             groupBox1.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)pic_logo).EndInit();
+            gb_info.ResumeLayout(false);
+            gb_info.PerformLayout();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -127,5 +194,10 @@
         private GroupBox gb_poss;
         private GroupBox gb_info;
         private TextBox tb_find;
+        private Label lb_countpost;
+        private Label lb_mail;
+        private Label lb_username;
+        private Label lb_logout;
+        private Label lb_countfollower;
     }
 }

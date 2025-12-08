@@ -12,9 +12,16 @@ namespace PostEZ.Main
 {
     public partial class Profile : Form
     {
-        public Profile()
+        private readonly string _username;
+        public Profile(string username)
         {
             InitializeComponent();
+            _username = username;
+        }
+
+        private void Profile_Load(object sender, EventArgs e)
+        {
+
         }
     }
 }

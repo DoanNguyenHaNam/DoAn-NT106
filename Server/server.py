@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 server.py
@@ -14,6 +14,10 @@ import threading
 import json
 import traceback
 import time
+import atexit
+import signal
+import sys
+import os
 from typing import Dict, Any, Optional
 
 HOST = "0.0.0.0"
@@ -24,13 +28,50 @@ VERBOSE_TO_CONSOLE = True
 WRITE_LOG_FILE = True
 LOG_FILENAME = "server_verbose.log"
 
+# Database file paths
+DB_DIR = "db"
+USERS_FILE = os.path.join(DB_DIR, "users.json")
+SIGNUP_FILE = os.path.join(DB_DIR, "signup.json")
+POSTS_FILE = os.path.join(DB_DIR, "posts.json")
+COMMENTS_FILE = os.path.join(DB_DIR, "comments.json")
+
 # Simple in-memory stores
 USERS = {
     "nam": {"username": "nam", "password": "123", "email": "nam@example.com"},
 }
+USER_SIGNUP = {}
+try:
+    with open(SIGNUP_FILE, 'r', encoding='utf-8') as f:
+        USER_SIGNUP = json.load(f)
+except Exception:
+    USER_SIGNUP = {}
+
+# Load existing data from files
+try:
+    with open(USERS_FILE, 'r', encoding='utf-8') as f:
+        loaded_users = json.load(f)
+        USERS.update(loaded_users)
+except Exception:
+    pass
+
 POSTS = []
+try:
+    with open(POSTS_FILE, 'r', encoding='utf-8') as f:
+        POSTS = json.load(f)
+except Exception:
+    pass
+
 COMMENTS = {}
+try:
+    with open(COMMENTS_FILE, 'r', encoding='utf-8') as f:
+        COMMENTS = json.load(f)
+except Exception:
+    pass
+
 POST_ID_SEQ = 1
+if POSTS:
+    POST_ID_SEQ = max([p.get("id", 0) for p in POSTS]) + 1
+
 LOCK = threading.Lock()
 
 _log_lock = threading.Lock()
@@ -55,6 +96,41 @@ def pretty(obj):
     except Exception:
         return str(obj)
 
+def save_all_data():
+    """Save all data to JSON files when server shuts down"""
+    log("Saving all data to files...", level="INFO")
+    
+    # Create db directory if it doesn't exist
+    if not os.path.exists(DB_DIR):
+        os.makedirs(DB_DIR)
+    
+    try:
+        with LOCK:
+            # Save users
+            with open(USERS_FILE, 'w', encoding='utf-8') as f:
+                json.dump(USERS, f, ensure_ascii=False, indent=2)
+            log(f"Saved {len(USERS)} users to {USERS_FILE}", level="INFO")
+            
+            # Save signup data
+            with open(SIGNUP_FILE, 'w', encoding='utf-8') as f:
+                json.dump(USER_SIGNUP, f, ensure_ascii=False, indent=2)
+            log(f"Saved signup data to {SIGNUP_FILE}", level="INFO")
+            
+            # Save posts
+            with open(POSTS_FILE, 'w', encoding='utf-8') as f:
+                json.dump(POSTS, f, ensure_ascii=False, indent=2)
+            log(f"Saved {len(POSTS)} posts to {POSTS_FILE}", level="INFO")
+            
+            # Save comments
+            with open(COMMENTS_FILE, 'w', encoding='utf-8') as f:
+                json.dump(COMMENTS, f, ensure_ascii=False, indent=2)
+            log(f"Saved comments to {COMMENTS_FILE}", level="INFO")
+            
+        log("All data saved successfully!", level="INFO")
+    except Exception as e:
+        log(f"Error saving data: {e}", level="ERROR")
+        traceback.print_exc()
+
 def send_json_fileobj(f, obj: Dict[str, Any], addr=None):
     try:
         s = json.dumps(obj, ensure_ascii=False)
@@ -69,40 +145,90 @@ def send_json_fileobj(f, obj: Dict[str, Any], addr=None):
 def handle_login_data(req: Dict[str, Any]):
     # Accept only username == "Admin123" and password == "Admin123!"
     username = req.get("username") or req.get("UserName") or req.get("User") or ""
+    request_id = req.get("request_id") or ""
     password = req.get("password") or req.get("Password") or req.get("Pass") or ""
     username = "" if username is None else str(username)
     password = "" if password is None else str(password)
-
-    log(f"Login attempt: username='{username}', password='{password}'", level="INFO")
-    accept = (username == "Admin123" and password == "Admin123!")
-    resp = {
-        "action": "login_data",
-        "username": username,
-        "password": password,
-        "accept": accept
-    }
+    error = "NO"
+    with LOCK:
+        log(f"Login attempt: username='{username}', password='{password}'", level="INFO")
+        if username in USER_SIGNUP:
+            if password == USER_SIGNUP[username].get("password", ""):
+                accept = True
+                error = "Đăng Nhập Thành Công"
+            else:
+                accept = False
+                error = "Sai Mật Khẩu"
+        else:
+            accept = (username == "Admin123" and password == "Admin123!")
+            if accept:
+                error = "Đăng Nhập Thành Công"
+            else:
+                error = "Tên đăng nhập không tồn tại"
+        resp = {
+            "action": "login_data",
+            "username": username,
+            "password": password,
+            "error": error,
+            "accept": accept,
+            "request_id": f"ServerHaha_{request_id}"
+        }
     return resp
 
 def handle_signup_data(req: Dict[str, Any]):
     username = req.get("username") or req.get("UserName") or ""
     password = req.get("password") or req.get("Password") or ""
     email = req.get("email") or req.get("Email") or ""
+    phone = req.get("phone") or req.get("Phone") or ""
     username = "" if username is None else str(username)
     password = "" if password is None else str(password)
     email = "" if email is None else str(email)
+    phone = "" if phone is None else str(phone)
 
+    error = "NO"
     with LOCK:
-        if username and username not in USERS:
-            USERS[username] = {"username": username, "password": password, "email": email}
-            accept = True
-        else:
+        log(f"Signup attempt: username='{username}', email='{email}', phone='{phone}'", level="INFO")
+        
+        # Kiểm tra username đã tồn tại chưa
+        if username in USER_SIGNUP:
             accept = False
+            error = "Tên đăng nhập đã tồn tại"
+        else:
+            # Kiểm tra email đã được đăng ký chưa
+            email_exists = False
+            phone_exists = False
+            for user_data in USER_SIGNUP.values():
+                if email and user_data.get("email") == email:
+                    email_exists = True
+                    break
+                if phone and user_data.get("phone") == phone:
+                    phone_exists = True
+                    break
+            
+            if email_exists:
+                accept = False
+                error = "Email đã được đăng ký"
+            elif phone_exists:
+                accept = False
+                error = "Số điện thoại đã được đăng ký"
+            else:
+                # Đăng ký thành công
+                USER_SIGNUP[username] = {
+                    "username": username,
+                    "password": password,
+                    "email": email,
+                    "phone": phone
+                }
+                accept = True
+                error = "Đăng Ký Thành Công"
 
     resp = {
         "action": "signup_data",
         "username": username,
         "password": password,
         "email": email,
+        "phone": phone,
+        "error": error,
         "accept": accept
     }
     return resp
@@ -129,10 +255,32 @@ def handle_create_post(req: Dict[str, Any]):
             "image_url": image_url,
             "video_url": video_url,
             "timestamp": str(int(time.time())),
-            "accept": True
+            "accept": True,
+            "error": "",
+            "accept": True,
+            "request_id": ""
         }
         POSTS.insert(0, post)
+        log(f"Created new post with id={pid} by user '{username}'", level="INFO")
+    
     return post
+
+def handle_get_feed(req: Dict[str, Any]):
+    """Trả về 10 posts gần nhất trong một mảng"""
+    with LOCK:
+        # Lấy 10 posts đầu tiên (mới nhất)
+        recent_posts = POSTS[:10] if len(POSTS) >= 10 else POSTS[:]
+        log(f"Sending {len(recent_posts)} recent posts to client", level="INFO")
+    
+    # Trả về mảng posts
+    resp = {
+        "action": "get_feed",
+        "posts": recent_posts,
+        "count": len(recent_posts),
+        "accept": True,
+        "error": ""
+    }
+    return resp
 
 def handle_previous_post_click(req: Dict[str, Any]):
     post_id = req.get("post_id") or req.get("PostId") or req.get("id")
@@ -207,6 +355,8 @@ ACTION_HANDLERS = {
     "create_post": handle_create_post,
     "post_data": handle_create_post,
     "getfeed": handle_create_post,  # placeholder (not used)
+    "getfeed": handle_get_feed,
+    "get_feed": handle_get_feed,
     "previouspostclick": handle_previous_post_click,
     "previous_post_click": handle_previous_post_click,
     "commentpreviouspostclick": handle_comment_previous_post_click,
@@ -274,7 +424,7 @@ def client_thread(conn: socket.socket, addr):
                 # copy request_id if provided
                 rid = jobj.get("request_id") or jobj.get("RequestId") or jobj.get("requestId")
                 if rid is not None:
-                    resp_obj["request_id"] = rid
+                    resp_obj["request_id"] = "ServerHaha_"+rid
 
                 log(f"Responding to {addr} with:\n{pretty(resp_obj)}", level="INFO")
                 send_json_fileobj(f, resp_obj, addr=addr)
@@ -284,7 +434,18 @@ def client_thread(conn: socket.socket, addr):
         traceback.print_exc()
     log(f"Thread exiting for {addr}", level="INFO")
 
+def signal_handler(signum, frame):
+    """Handle shutdown signals"""
+    log(f"Received signal {signum}, shutting down...", level="INFO")
+    save_all_data()
+    sys.exit(0)
+
 def start_server():
+    # Register cleanup handlers
+    atexit.register(save_all_data)
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+    
     # truncate log file on start
     if WRITE_LOG_FILE:
         try:
@@ -294,6 +455,8 @@ def start_server():
             pass
 
     log(f"Listening on {HOST}:{PORT}", level="INFO")
+    log(f"Data will be auto-saved to {DB_DIR}/ on shutdown", level="INFO")
+    
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.bind((HOST, PORT))
@@ -307,6 +470,7 @@ def start_server():
         log("Shutting down (KeyboardInterrupt)", level="INFO")
     finally:
         s.close()
+        save_all_data()
 
 if __name__ == "__main__":
     start_server()

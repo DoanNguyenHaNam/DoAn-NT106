@@ -149,6 +149,7 @@
             Controls.Add(groupBox1);
             Name = "Profile";
             Text = "Profile";
+            Load += Profile_Load;
             groupBox1.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)pic_logo).EndInit();
             gb_profile.ResumeLayout(false);

@@ -105,6 +105,7 @@
             tb_password.PasswordChar = '*';
             tb_password.Size = new Size(278, 29);
             tb_password.TabIndex = 2;
+            tb_password.Text = "Admin123!";
             // 
             // label1
             // 

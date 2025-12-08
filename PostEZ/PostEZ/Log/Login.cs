@@ -1,18 +1,20 @@
-﻿using System;
+﻿using PostEZ;
+using PostEZ.Main;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Data.SqlTypes;
 using System.Drawing;
+using System.IO;
+using System.Linq;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Net.Http;
-using System.IO;
-using System.Text.RegularExpressions;
-using PostEZ.Main;
-using PostEZ;
 
 namespace PostEZ.Log
 {
@@ -125,7 +127,7 @@ namespace PostEZ.Log
                 action = "login_data",
                 username = tb_username.Text,
                 password = tb_password.Text,
-
+                request_id = Load_Data.GenerateRandomString(4)
             };
             bool success = Load_Data.SendJson(Load_Data.LoginData);
 
@@ -135,16 +137,28 @@ namespace PostEZ.Log
                 return;
             }
 
+            int i=0;
+
+            while (!Load_Data.LoginData.request_id.Contains("ServerHaha"))
+            {
+                i += 1;
+                if (i >=100)
+                {
+                    MessageBox.Show("Server không phản hồi kịp thời. Vui lòng thử lại sau!", "Lỗi");
+                    return;
+                }
+                System.Threading.Thread.Sleep(100);
+
+                continue;
+            }
+
+            MessageBox.Show(Load_Data.LoginData.error, "Thông báo");
+
             if (Load_Data.LoginData.accept)
             {
-                MessageBox.Show("Đăng nhập thành công!", "Thành công");
                 Dashboard dashboardForm = new Dashboard();
                 this.Hide();
                 dashboardForm.ShowDialog();
-            }
-            else
-            {
-                MessageBox.Show("Tên đăng nhập hoặc mật khẩu không đúng.", "Lỗi");
             }
         }
     }

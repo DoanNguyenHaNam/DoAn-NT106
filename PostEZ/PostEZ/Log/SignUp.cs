@@ -1,4 +1,6 @@
-﻿using System;
+﻿using PostEZ;
+using PostEZ.Main;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -61,6 +63,47 @@ namespace PostEZ.Log
                 MessageBox.Show("Số điện thoại không hợp lệ", "Lỗi");
                 return;
             }
+            Load_Data.SignupData = new Load_Data.Data_SignupJson
+            {
+                action = "signup_data",
+                username = tb_username.Text,
+                password = tb_password.Text,
+                email = tb_mail.Text,
+                phone = tb_phone.Text,
+                request_id = Load_Data.GenerateRandomString(4)
+            };
+            bool success = Load_Data.SendJson(Load_Data.SignupData);
+
+            if (!success)
+            {
+                MessageBox.Show("Không thể gửi dữ liệu tới server!", "Lỗi");
+                return;
+            }
+
+            int i = 0;
+
+            while (!Load_Data.SignupData.request_id.Contains("ServerHaha"))
+            {
+                i += 1;
+                if (i >= 100)
+                {
+                    MessageBox.Show("Server không phản hồi kịp thời. Vui lòng thử lại sau!", "Lỗi");
+                    return;
+                }
+                System.Threading.Thread.Sleep(100);
+
+                continue;
+            }
+
+            MessageBox.Show(Load_Data.SignupData.error, "Thông báo");
+
+            if (Load_Data.SignupData.accept)
+            {
+                Login login = new Login();
+                this.Hide();
+                login.ShowDialog();
+            }
+
         }
     }
 }

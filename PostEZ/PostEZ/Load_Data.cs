@@ -45,6 +45,7 @@ namespace PostEZ
         public static List<Data_CommentPreviousPostClickJson> Comments = new List<Data_CommentPreviousPostClickJson>();
         public static Data_LoginJson LoginData = new Data_LoginJson();
         public static Data_SignupJson SignupData = new Data_SignupJson();
+        public static GetFeedResponse getFeedResponse = new GetFeedResponse();
         public static Data_PreviousPostClickJson PreviousPostClickData = new Data_PreviousPostClickJson();
 
 
@@ -129,6 +130,13 @@ namespace PostEZ
                     if (signupData != null)
                     {
                         SignupData = signupData;
+                    }
+                    break;
+                case "get_feed":
+                    var getFeedData = JsonConvert.DeserializeObject<GetFeedResponse>(json);
+                    if (getFeedData != null)
+                    {
+                        getFeedResponse = getFeedData;
                     }
                     break;
                 case "previous_post_click":
@@ -226,6 +234,9 @@ namespace PostEZ
             public string username { get; set; }
             public string password { get; set; }
             public bool accept { get; set; }
+
+            public string error { get; set; }
+
             public string request_id { get; set; }
         }
 
@@ -235,6 +246,10 @@ namespace PostEZ
             public string username { get; set; }
             public string password { get; set; }
             public string email { get; set; }
+            public string phone { get; set; }
+
+            public string error { get; set; }
+
             public bool accept { get; set; }
             public string request_id { get; set; }
         }
@@ -249,6 +264,19 @@ namespace PostEZ
             public string video_url { get; set; }
             public string timestamp { get; set; }
             public bool accept { get; set; }
+
+            public string error { get; set; }
+
+            public string request_id { get; set; }
+        }
+
+        public class GetFeedResponse
+        {
+            public string action { get; set; }
+            public List<Data_PostJson> posts { get; set; }
+            public int count { get; set; }
+            public bool accept { get; set; }
+            public string error { get; set; }
             public string request_id { get; set; }
         }
 
@@ -261,6 +289,9 @@ namespace PostEZ
             public string comment_content { get; set; }
             public string timestamp { get; set; }
             public bool accept { get; set; }
+
+            public string error { get; set; }
+
             public string request_id { get; set; }
         }
 
@@ -274,6 +305,9 @@ namespace PostEZ
             public string video_url { get; set; }
             public string timestamp { get; set; }
             public bool accept { get; set; }
+
+            public string error { get; set; }
+
             public string request_id { get; set; }
         }
 
@@ -287,7 +321,21 @@ namespace PostEZ
             public bool accept { get; set; }
             public bool delete_post { get; set; }
             public bool reply_post { get; set; }
+
+            public string error { get; set; }
+
             public string request_id { get; set; }
+        }
+
+        public static string GenerateRandomString(int length)
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+            Random random = new Random();
+
+            return new string(Enumerable.Repeat(chars, length)
+              .Select(s => s[random.Next(s.Length)])
+              .ToArray());
         }
 
     }
