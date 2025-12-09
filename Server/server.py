@@ -29,11 +29,12 @@ WRITE_LOG_FILE = True
 LOG_FILENAME = "server_verbose.log"
 
 # Database file paths
-DB_DIR = "db"
+DB_DIR = "DB"
 USERS_FILE = os.path.join(DB_DIR, "users.json")
 SIGNUP_FILE = os.path.join(DB_DIR, "signup.json")
 POSTS_FILE = os.path.join(DB_DIR, "posts.json")
 COMMENTS_FILE = os.path.join(DB_DIR, "comments.json")
+LIKES_FILE = os.path.join(DB_DIR, "likes.json")  # ← THÊM FILE LIKES
 
 # Simple in-memory stores
 USERS = {
@@ -65,6 +66,13 @@ COMMENTS = {}
 try:
     with open(COMMENTS_FILE, 'r', encoding='utf-8') as f:
         COMMENTS = json.load(f)
+except Exception:
+    pass
+
+LIKES = {}  # ← THÊM LIKES: {post_id: [username1, username2, ...]}
+try:
+    with open(LIKES_FILE, 'r', encoding='utf-8') as f:
+        LIKES = json.load(f)
 except Exception:
     pass
 
@@ -126,6 +134,11 @@ def save_all_data():
                 json.dump(COMMENTS, f, ensure_ascii=False, indent=2)
             log(f"Saved comments to {COMMENTS_FILE}", level="INFO")
             
+            # Save likes
+            with open(LIKES_FILE, 'w', encoding='utf-8') as f:
+                json.dump(LIKES, f, ensure_ascii=False, indent=2)
+            log(f"Saved likes to {LIKES_FILE}", level="INFO")
+            
         log("All data saved successfully!", level="INFO")
     except Exception as e:
         log(f"Error saving data: {e}", level="ERROR")
@@ -153,7 +166,16 @@ def handle_login_data(req: Dict[str, Any]):
     with LOCK:
         log(f"Login attempt: username='{username}', password='{password}'", level="INFO")
         if username in USER_SIGNUP:
-            if password == USER_SIGNUP[username].get("password", ""):
+            user_dir = "DB/user"
+            if not os.path.exists(user_dir):
+                os.makedirs(user_dir)
+                log(f"Created directory: {user_dir}", level="INFO")
+                    
+            # Lưu file user riêng
+            user_file = os.path.join(user_dir, f"{username}.json")
+            with open(user_file, 'r', encoding='utf-8') as f:
+                user_data = json.load(f)
+            if password == user_data.get("password", ""):
                 accept = True
                 error = "Đăng Nhập Thành Công"
             else:
@@ -215,13 +237,43 @@ def handle_signup_data(req: Dict[str, Any]):
                 # Đăng ký thành công
                 USER_SIGNUP[username] = {
                     "username": username,
-                    "password": password,
                     "email": email,
                     "phone": phone
                 }
                 accept = True
                 error = "Đăng Ký Thành Công"
-
+                USER_SAVEDATA={
+                    "username": username,
+                    "password": password,
+                    "email": email,
+                    "phone": phone,
+                    "bio": "Hello",
+                    "avatar_url": "http://160.191.245.144/doanNT106/DB/USER/avatar/5.jpg",
+                    "posts_user": [],
+                    "count_posts": 0,
+                    "count_followers": 0
+                }
+                try:
+                    # Tạo thư mục DB/user nếu chưa tồn tại
+                    user_dir = "DB/user"
+                    if not os.path.exists(user_dir):
+                        os.makedirs(user_dir)
+                        log(f"Created directory: {user_dir}", level="INFO")
+                    
+                    # Lưu file user riêng
+                    user_file = os.path.join(user_dir, f"{username}.json")
+                    with open(user_file, 'w', encoding='utf-8') as f:
+                        json.dump(USER_SAVEDATA, f, ensure_ascii=False, indent=2)
+                    log(f"Saved user data to {user_file}", level="INFO")
+                    
+                    # Lưu signup.json
+                    with open(SIGNUP_FILE, 'w', encoding='utf-8') as f:
+                        json.dump(USER_SIGNUP, f, ensure_ascii=False, indent=2)
+                    log(f"Saved signup data to {SIGNUP_FILE}", level="INFO")
+                    
+                except Exception as e:
+                    log(f"Error saving user data for '{username}': {e}", level="ERROR")
+                    traceback.print_exc()
     resp = {
         "action": "signup_data",
         "username": username,
@@ -232,6 +284,24 @@ def handle_signup_data(req: Dict[str, Any]):
         "accept": accept
     }
     return resp
+
+VIOLATION_WORDS = [
+    "đụ", "địt", "lồn", "cặc", "buồi", "chó", "óc chó", "đồ chó", 
+    "súc vật", "đĩ", "con đĩ", "mẹ mày", "bố mày", "cmm", "dmm", 
+    "vcl", "vl", "cc", "clgt", "fuck", "shit", "bitch", "ass", 
+    "damn", "hell", "dick", "pussy", "motherfucker", "asshole"
+]
+
+def check_violation(text):
+    """Kiểm tra nội dung có chứa từ vi phạm không"""
+    if not text:
+        return False, ""
+    
+    text_lower = text.lower()
+    for word in VIOLATION_WORDS:
+        if word.lower() in text_lower:
+            return True, word
+    return False, ""
 
 def handle_create_post(req: Dict[str, Any]):
     global POST_ID_SEQ
@@ -244,9 +314,48 @@ def handle_create_post(req: Dict[str, Any]):
     image_url = "" if image_url is None else str(image_url)
     video_url = "" if video_url is None else str(video_url)
 
+    # Kiểm tra từ vi phạm
+    has_violation, violation_word = check_violation(content)
+    if has_violation:
+        return {
+            "action": "post_data",
+            "username": username,
+            "id": 0,
+            "content": content,
+            "image_url": image_url,
+            "video_url": video_url,
+            "timestamp": str(int(time.time())),
+            "enabled": False,
+            "error": f"Nội dung chứa từ vi phạm: '{violation_word}'. Bài đăng không được phép.",
+            "accept": False,
+            "request_id": ""
+        }
+
+    # Validate video_url - chỉ cho phép YouTube hoặc IP máy chủ 160.191.245.144
+    if video_url:
+        is_youtube = "youtube.com" in video_url.lower() or "youtu.be" in video_url.lower()
+        is_server = "160.191.245.144" in video_url
+        
+        if not (is_youtube or is_server):
+            return {
+                "action": "post_data",
+                "username": username,
+                "id": 0,
+                "content": content,
+                "image_url": image_url,
+                "video_url": video_url,
+                "timestamp": str(int(time.time())),
+                "enabled": False,
+                "error": "Video URL không hợp lệ. Chỉ chấp nhận link YouTube hoặc máy chủ 160.191.245.144",
+                "accept": False,
+                "request_id": ""
+            }
+
     with LOCK:
         pid = POST_ID_SEQ
         POST_ID_SEQ += 1
+        
+        # Tạo post mới với enabled = True (hiển thị)
         post = {
             "action": "post_data",
             "username": username,
@@ -255,22 +364,122 @@ def handle_create_post(req: Dict[str, Any]):
             "image_url": image_url,
             "video_url": video_url,
             "timestamp": str(int(time.time())),
-            "accept": True,
+            "enabled": True,
+            "like_count": 0,  # ← THÊM like_count
+            "comment_count": 0,  # ← THÊM comment_count
             "error": "",
             "accept": True,
             "request_id": ""
         }
-        POSTS.insert(0, post)
+        
+        # ========================================
+        # THÊM VÀO CUỐI POSTS (không phải đầu)
+        # ========================================
+        POSTS.append(post)  # ← Đổi từ insert(0) thành append()
         log(f"Created new post with id={pid} by user '{username}'", level="INFO")
+        
+        # ========================================
+        # GHI NGAY VÀO posts.json
+        # ========================================
+        try:
+            if not os.path.exists(DB_DIR):
+                os.makedirs(DB_DIR)
+            
+            with open(POSTS_FILE, 'w', encoding='utf-8') as f:
+                json.dump(POSTS, f, ensure_ascii=False, indent=2)
+            log(f"Saved posts.json immediately after creating post {pid}", level="INFO")
+        except Exception as e:
+            log(f"Error saving posts.json: {e}", level="ERROR")
+            traceback.print_exc()
+        
+        # ========================================
+        # CẬP NHẬT VÀ GHI NGAY VÀO FILE USER
+        # ========================================
+        user_dir = "DB/user"
+        user_file = os.path.join(user_dir, f"{username}.json")
+        
+        if os.path.exists(user_file):
+            try:
+                # Đọc dữ liệu user hiện tại
+                with open(user_file, 'r', encoding='utf-8') as f:
+                    user_data = json.load(f)
+                
+                # Migrate posts sang posts_user nếu cần
+                if "posts" in user_data and "posts_user" not in user_data:
+                    user_data["posts_user"] = user_data.pop("posts")
+                
+                # Đảm bảo có posts_user (dạng list)
+                if "posts_user" not in user_data:
+                    user_data["posts_user"] = []
+                
+                # ========================================
+                # THÊM TOÀN BỘ THÔNG TIN POST VÀO posts_user
+                # ========================================
+                post_info = {
+                    "id": pid,
+                    "content": content,
+                    "image_url": image_url,
+                    "video_url": video_url,
+                    "timestamp": post["timestamp"],
+                    "enabled": True
+                }
+                
+                # Kiểm tra xem post_id đã tồn tại chưa
+                existing_post = next((p for p in user_data["posts_user"] if isinstance(p, dict) and p.get("id") == pid), None)
+                if not existing_post:
+                    user_data["posts_user"].append(post_info)  # ← Thêm vào cuối
+                
+                # Cập nhật count_posts
+                user_data["count_posts"] = len(user_data["posts_user"])
+                
+                # GHI NGAY VÀO FILE USER
+                with open(user_file, 'w', encoding='utf-8') as f:
+                    json.dump(user_data, f, ensure_ascii=False, indent=2)
+                
+                log(f"Updated user data for '{username}' immediately: added post {pid}, total posts: {user_data['count_posts']}", level="INFO")
+                
+            except Exception as e:
+                log(f"Error updating user data for '{username}': {e}", level="ERROR")
+                traceback.print_exc()
+        else:
+            log(f"User file not found: {user_file}, post created but user data not updated", level="WARN")
     
     return post
 
 def handle_get_feed(req: Dict[str, Any]):
-    """Trả về 10 posts gần nhất trong một mảng"""
+    """Trả về posts theo yêu cầu - mặc định 10 posts gần nhất, hoặc tất cả nếu all=true"""
+    limit = req.get("limit") or 10
+    get_all = req.get("all") or req.get("All") or False
+    show_disabled = req.get("show_disabled") or False  # ← Thêm tùy chọn hiển thị post bị ẩn
+    
+    # Chuyển đổi limit sang int
+    try:
+        limit = int(limit)
+    except:
+        limit = 10
+    
     with LOCK:
-        # Lấy 10 posts đầu tiên (mới nhất)
-        recent_posts = POSTS[:10] if len(POSTS) >= 10 else POSTS[:]
-        log(f"Sending {len(recent_posts)} recent posts to client", level="INFO")
+        # Sắp xếp POSTS theo id giảm dần (ID lớn nhất → nhỏ nhất)
+        sorted_posts = sorted(POSTS, key=lambda p: p.get("id", 0), reverse=True)
+        
+        # Lọc post theo enabled (chỉ hiển thị post có enabled=True)
+        if not show_disabled:
+            sorted_posts = [p for p in sorted_posts if p.get("enabled", True)]
+        
+        # Cập nhật like_count và comment_count cho mỗi post
+        for post in sorted_posts:
+            pid = str(post.get("id"))
+            post["like_count"] = len(LIKES.get(pid, []))
+            post["comment_count"] = len(COMMENTS.get(pid, []))
+        
+        if get_all:
+            # Trả về tất cả posts
+            recent_posts = sorted_posts
+            log(f"Sending ALL {len(recent_posts)} posts to client", level="INFO")
+        else:
+            # Lấy số lượng posts theo limit
+            recent_posts = sorted_posts[:limit] if len(sorted_posts) >= limit else sorted_posts[:]
+            log(f"Sending {len(recent_posts)} recent posts (limit={limit}) to client", level="INFO")
     
     # Trả về mảng posts
     resp = {
@@ -303,6 +512,7 @@ def handle_previous_post_click(req: Dict[str, Any]):
             "image_url": "",
             "video_url": "",
             "timestamp": "",
+            "enabled": False,
             "accept": False
         }
     resp = {
@@ -313,6 +523,7 @@ def handle_previous_post_click(req: Dict[str, Any]):
         "image_url": chosen.get("image_url", ""),
         "video_url": chosen.get("video_url", ""),
         "timestamp": chosen.get("timestamp", ""),
+        "enabled": chosen.get("enabled", True),  # ← Thêm enabled
         "accept": True
     }
     return resp
@@ -346,6 +557,420 @@ def handle_comment_previous_post_click(req: Dict[str, Any]):
         lst.append(c)
     return c
 
+def handle_update_user_avatar(req: Dict[str, Any]):
+    """Cập nhật avatar_url của user"""
+    username = req.get("username") or req.get("UserName") or ""
+    new_avatar_url = req.get("avatar_url") or req.get("avatarUrl") or ""
+    username = "" if username is None else str(username)
+    new_avatar_url = "" if new_avatar_url is None else str(new_avatar_url)
+    
+    if not username:
+        return {
+            "action": "update_user_avatar",
+            "username": "",
+            "avatar_url": "",
+            "error": "Username không được để trống",
+            "accept": False
+        }
+    
+    if not new_avatar_url:
+        return {
+            "action": "update_user_avatar",
+            "username": username,
+            "avatar_url": "",
+            "error": "Avatar URL không được để trống",
+            "accept": False
+        }
+    
+    with LOCK:
+        user_dir = "DB/user"
+        user_file = os.path.join(user_dir, f"{username}.json")
+        
+        # Kiểm tra file có tồn tại không
+        if not os.path.exists(user_file):
+            log(f"User file not found: {user_file}", level="WARN")
+            return {
+                "action": "update_user_avatar",
+                "username": username,
+                "avatar_url": "",
+                "error": "User không tồn tại",
+                "accept": False
+            }
+        
+        try:
+            # Đọc dữ liệu user hiện tại
+            with open(user_file, 'r', encoding='utf-8') as f:
+                user_data = json.load(f)
+            
+            # Lưu giá trị cũ để log
+            old_avatar_url = user_data.get("avatar_url", "")
+            
+            # Cập nhật avatar_url
+            user_data["avatar_url"] = new_avatar_url
+            
+            # GHI NGAY VÀO FILE USER
+            with open(user_file, 'w', encoding='utf-8') as f:
+                json.dump(user_data, f, ensure_ascii=False, indent=2)
+            
+            log(f"Updated avatar_url for '{username}': '{old_avatar_url}' -> '{new_avatar_url}'", level="INFO")
+            
+            return {
+                "action": "update_user_avatar",
+                "username": username,
+                "avatar_url": new_avatar_url,
+                "error": "Cập nhật avatar thành công",
+                "accept": True
+            }
+            
+        except Exception as e:
+            log(f"Error updating avatar for '{username}': {e}", level="ERROR")
+            traceback.print_exc()
+            return {
+                "action": "update_user_avatar",
+                "username": username,
+                "avatar_url": "",
+                "error": f"Lỗi cập nhật avatar: {str(e)}",
+                "accept": False
+            }
+
+def handle_like_post(req: Dict[str, Any]):
+    """Thêm/bỏ like cho bài đăng"""
+    post_id = req.get("post_id") or req.get("PostId") or req.get("id")
+    username = req.get("username") or req.get("UserName") or ""
+    
+    if not post_id:
+        return {
+            "action": "like_post",
+            "post_id": "",
+            "username": username,
+            "liked": False,
+            "like_count": 0,
+            "error": "Post ID không được để trống",
+            "accept": False
+        }
+    
+    if not username:
+        return {
+            "action": "like_post",
+            "post_id": str(post_id),
+            "username": "",
+            "liked": False,
+            "like_count": 0,
+            "error": "Username không được để trống",
+            "accept": False
+        }
+    
+    with LOCK:
+        pid = str(post_id)
+        
+        # Tìm post trong POSTS
+        post = None
+        for p in POSTS:
+            if str(p.get("id")) == pid:
+                post = p
+                break
+        
+        if not post:
+            return {
+                "action": "like_post",
+                "post_id": pid,
+                "username": username,
+                "liked": False,
+                "like_count": 0,
+                "error": "Bài đăng không tồn tại",
+                "accept": False
+            }
+        
+        # Khởi tạo danh sách like cho post nếu chưa có
+        if pid not in LIKES:
+            LIKES[pid] = []
+        
+        # Toggle like
+        if username in LIKES[pid]:
+            # Bỏ like
+            LIKES[pid].remove(username)
+            liked = False
+            log(f"User '{username}' unliked post {pid}", level="INFO")
+        else:
+            # Thêm like
+            LIKES[pid].append(username)
+            liked = True
+            log(f"User '{username}' liked post {pid}", level="INFO")
+        
+        # Cập nhật like_count trong post
+        like_count = len(LIKES[pid])
+        post["like_count"] = like_count
+        
+        # Lưu ngay vào file
+        try:
+            with open(LIKES_FILE, 'w', encoding='utf-8') as f:
+                json.dump(LIKES, f, ensure_ascii=False, indent=2)
+            
+            with open(POSTS_FILE, 'w', encoding='utf-8') as f:
+                json.dump(POSTS, f, ensure_ascii=False, indent=2)
+            
+            log(f"Saved likes and posts after like action", level="INFO")
+        except Exception as e:
+            log(f"Error saving likes: {e}", level="ERROR")
+        
+        return {
+            "action": "like_post",
+            "post_id": pid,
+            "username": username,
+            "liked": liked,
+            "like_count": like_count,
+            "error": "Thành công" if liked else "Đã bỏ like",
+            "accept": True
+        }
+
+def handle_add_comment(req: Dict[str, Any]):
+    """Thêm comment vào bài đăng"""
+    post_id = req.get("post_id") or req.get("PostId") or req.get("id")
+    username = req.get("username") or req.get("UserName") or ""
+    content = req.get("content") or req.get("comment_content") or req.get("commentContent") or ""
+    
+    if not post_id:
+        return {
+            "action": "add_comment",
+            "post_id": "",
+            "username": username,
+            "comment_id": "",
+            "content": content,
+            "timestamp": "",
+            "error": "Post ID không được để trống",
+            "accept": False
+        }
+    
+    if not username:
+        return {
+            "action": "add_comment",
+            "post_id": str(post_id),
+            "username": "",
+            "comment_id": "",
+            "content": content,
+            "timestamp": "",
+            "error": "Username không được để trống",
+            "accept": False
+        }
+    
+    if not content:
+        return {
+            "action": "add_comment",
+            "post_id": str(post_id),
+            "username": username,
+            "comment_id": "",
+            "content": "",
+            "timestamp": "",
+            "error": "Nội dung comment không được để trống",
+            "accept": False
+        }
+    
+    with LOCK:
+        pid = str(post_id)
+        
+        # Tìm post trong POSTS
+        post = None
+        for p in POSTS:
+            if str(p.get("id")) == pid:
+                post = p
+                break
+        
+        if not post:
+            return {
+                "action": "add_comment",
+                "post_id": pid,
+                "username": username,
+                "comment_id": "",
+                "content": content,
+                "timestamp": "",
+                "error": "Bài đăng không tồn tại",
+                "accept": False
+            }
+        
+        # Khởi tạo danh sách comment cho post nếu chưa có
+        if pid not in COMMENTS:
+            COMMENTS[pid] = []
+        
+        # Tạo comment mới
+        comment_id = len(COMMENTS[pid]) + 1
+        timestamp = str(int(time.time()))
+        
+        comment = {
+            "comment_id": str(comment_id),
+            "username": username,
+            "content": content,
+            "timestamp": timestamp
+        }
+        
+        COMMENTS[pid].append(comment)
+        
+        # Cập nhật comment_count trong post
+        comment_count = len(COMMENTS[pid])
+        post["comment_count"] = comment_count
+        
+        log(f"User '{username}' commented on post {pid}: '{content}'", level="INFO")
+        
+        # Lưu ngay vào file
+        try:
+            with open(COMMENTS_FILE, 'w', encoding='utf-8') as f:
+                json.dump(COMMENTS, f, ensure_ascii=False, indent=2)
+            
+            with open(POSTS_FILE, 'w', encoding='utf-8') as f:
+                json.dump(POSTS, f, ensure_ascii=False, indent=2)
+            
+            log(f"Saved comments and posts after add comment", level="INFO")
+        except Exception as e:
+            log(f"Error saving comments: {e}", level="ERROR")
+        
+        return {
+            "action": "add_comment",
+            "post_id": pid,
+            "username": username,
+            "comment_id": str(comment_id),
+            "content": content,
+            "timestamp": timestamp,
+            "comment_count": comment_count,
+            "error": "Thêm comment thành công",
+            "accept": True
+        }
+
+def handle_get_comments(req: Dict[str, Any]):
+    """Lấy danh sách comments của một bài đăng"""
+    post_id = req.get("post_id") or req.get("PostId") or req.get("id")
+    
+    if not post_id:
+        return {
+            "action": "get_comments",
+            "post_id": "",
+            "comments": [],
+            "count": 0,
+            "error": "Post ID không được để trống",
+            "accept": False
+        }
+    
+    with LOCK:
+        pid = str(post_id)
+        
+        # Lấy comments của post
+        comments = COMMENTS.get(pid, [])
+        
+        log(f"Loaded {len(comments)} comments for post {pid}", level="INFO")
+        
+        return {
+            "action": "get_comments",
+            "post_id": pid,
+            "comments": comments,
+            "count": len(comments),
+            "error": "",
+            "accept": True
+        }
+
+def handle_get_user_info(req: Dict[str, Any]):
+    """Trả về thông tin user từ file DB/user/{username}.json"""
+    username = req.get("username") or req.get("UserName") or req.get("user") or ""
+    username = "" if username is None else str(username)
+    
+    if not username:
+        return {
+            "action": "get_user_info",
+            "username": "",
+            "password": "",
+            "email": "",
+            "phone": "",
+            "bio": "",
+            "avatar_url": "",
+            "posts_user": [],
+            "count_posts": 0,
+            "count_followers": 0,
+            "error": "Username không được để trống",
+            "accept": False
+        }
+    
+    with LOCK:
+        user_dir = "DB/user"
+        user_file = os.path.join(user_dir, f"{username}.json")
+        
+        # Kiểm tra file có tồn tại không
+        if not os.path.exists(user_file):
+            log(f"User file not found: {user_file}", level="WARN")
+            return {
+                "action": "get_user_info",
+                "username": username,
+                "password": "",
+                "email": "",
+                "phone": "",
+                "bio": "",
+                "avatar_url": "",
+                "posts_user": [],
+                "count_posts": 0,
+                "count_followers": 0,
+                "error": "User không tồn tại",
+                "accept": False
+            }
+        
+        try:
+            # Đọc dữ liệu user từ file
+            with open(user_file, 'r', encoding='utf-8') as f:
+                user_data = json.load(f)
+            
+            # Kiểm tra và migrate từ "posts" sang "posts_user" nếu cần
+            if "posts" in user_data and "posts_user" not in user_data:
+                user_data["posts_user"] = user_data.pop("posts")
+                log(f"Migrated 'posts' to 'posts_user' for {username}", level="INFO")
+            
+            # Kiểm tra xem có count_followers chưa, nếu chưa thì thêm vào
+            if "count_followers" not in user_data:
+                user_data["count_followers"] = 0
+                log(f"Added count_followers to {user_file}", level="INFO")
+            
+            # Đảm bảo có posts_user
+            if "posts_user" not in user_data:
+                user_data["posts_user"] = []
+                log(f"Added posts_user to {user_file}", level="INFO")
+            
+            # Lưu lại file nếu có thay đổi
+            if "posts" in user_data or "count_followers" not in user_data or "posts_user" not in user_data:
+                with open(user_file, 'w', encoding='utf-8') as f:
+                    json.dump(user_data, f, ensure_ascii=False, indent=2)
+                log(f"Updated user file {user_file}", level="INFO")
+            
+            log(f"Loaded user info for '{username}'", level="INFO")
+            
+            # Trả về thông tin user theo đúng thứ tự
+            resp = {
+                "action": "get_user_info",
+                "username": user_data.get("username", ""),
+                "password": user_data.get("password", ""),
+                "email": user_data.get("email", ""),
+                "phone": user_data.get("phone", ""),
+                "bio": user_data.get("bio", ""),
+                "avatar_url": user_data.get("avatar_url", ""),
+                "posts_user": user_data.get("posts_user", []),
+                "count_posts": user_data.get("count_posts", 0),
+                "count_followers": user_data.get("count_followers", 0),
+                "error": "",
+                "accept": True
+            }
+            return resp
+            
+        except Exception as e:
+            log(f"Error loading user data for '{username}': {e}", level="ERROR")
+            traceback.print_exc()
+            return {
+                "action": "get_user_info",
+                "username": username,
+                "password": "",
+                "email": "",
+                "phone": "",
+                "bio": "",
+                "avatar_url": "",
+                "posts_user": [],
+                "count_posts": 0,
+                "count_followers": 0,
+                "error": f"Lỗi đọc dữ liệu user: {str(e)}",
+                "accept": False
+            }
+
 ACTION_HANDLERS = {
     "login": handle_login_data,
     "login_data": handle_login_data,
@@ -354,9 +979,19 @@ ACTION_HANDLERS = {
     "createpost": handle_create_post,
     "create_post": handle_create_post,
     "post_data": handle_create_post,
-    "getfeed": handle_create_post,  # placeholder (not used)
     "getfeed": handle_get_feed,
     "get_feed": handle_get_feed,
+    "getuserinfo": handle_get_user_info,
+    "get_user_info": handle_get_user_info,
+    "user_info": handle_get_user_info,
+    "updateuseravatar": handle_update_user_avatar,
+    "update_user_avatar": handle_update_user_avatar,
+    "likepost": handle_like_post,
+    "like_post": handle_like_post,
+    "addcomment": handle_add_comment,
+    "add_comment": handle_add_comment,
+    "getcomments": handle_get_comments,
+    "get_comments": handle_get_comments,
     "previouspostclick": handle_previous_post_click,
     "previous_post_click": handle_previous_post_click,
     "commentpreviouspostclick": handle_comment_previous_post_click,

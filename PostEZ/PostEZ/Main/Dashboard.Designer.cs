@@ -58,6 +58,7 @@
             // 
             // btn_profile
             // 
+            btn_profile.Enabled = false;
             btn_profile.Location = new Point(7, 185);
             btn_profile.Name = "btn_profile";
             btn_profile.Size = new Size(122, 34);
@@ -68,6 +69,7 @@
             // 
             // btn_main
             // 
+            btn_main.Enabled = false;
             btn_main.Location = new Point(7, 145);
             btn_main.Name = "btn_main";
             btn_main.Size = new Size(122, 34);
@@ -109,6 +111,7 @@
             // lb_logout
             // 
             lb_logout.AutoSize = true;
+            lb_logout.Enabled = false;
             lb_logout.Font = new Font("Segoe UI", 12F);
             lb_logout.Location = new Point(6, 220);
             lb_logout.Name = "lb_logout";

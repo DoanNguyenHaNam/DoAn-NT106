@@ -47,6 +47,15 @@ namespace PostEZ
         public static Data_SignupJson SignupData = new Data_SignupJson();
         public static GetFeedResponse getFeedResponse = new GetFeedResponse();
         public static Data_PreviousPostClickJson PreviousPostClickData = new Data_PreviousPostClickJson();
+        public static Data_InformationUserJson InformationUser = new Data_InformationUserJson();
+        public static Data_PostJson CreatePost = new Data_PostJson();
+        // ============================================
+        // THÊM MỚI - Biến global cho update avatar
+        // ============================================
+        public static Data_UpdateAvatarJson UpdateAvatar = new Data_UpdateAvatarJson();
+        public static Data_LikePostJson LikePostResponse = new Data_LikePostJson();
+        public static Data_AddCommentJson AddCommentResponse = new Data_AddCommentJson();
+        public static Data_GetCommentsJson GetCommentsResponse = new Data_GetCommentsJson();
 
 
         // ============================================
@@ -108,6 +117,7 @@ namespace PostEZ
                     var postData = JsonConvert.DeserializeObject<Data_PostJson>(json);
                     if (postData != null)
                     {
+                        CreatePost = postData;
                         Posts.Add(postData);
                     }
                     break;
@@ -144,6 +154,53 @@ namespace PostEZ
                     if (previousPostClickData != null)
                     {
                         PreviousPostClickData = previousPostClickData;
+                    }
+                    break;
+                case "get_user_info":
+                    var userInfoData = JsonConvert.DeserializeObject<Data_InformationUserJson>(json);
+                    if (userInfoData != null)
+                    {
+                        InformationUser = userInfoData;
+                    }
+                    break;
+                // ============================================
+                // THÊM MỚI - Xử lý response update avatar
+                // ============================================
+                case "update_user_avatar":
+                    var updateAvatarData = JsonConvert.DeserializeObject<Data_UpdateAvatarJson>(json);
+                    if (updateAvatarData != null)
+                    {
+                        UpdateAvatar = updateAvatarData;
+                    }
+                    break;
+                // ============================================
+                // THÊM MỚI - Xử lý response Like bài viết
+                // ============================================
+                case "like_post":
+                    var likeData = JsonConvert.DeserializeObject<Data_LikePostJson>(json);
+                    if (likeData != null)
+                    {
+                        LikePostResponse = likeData;
+                    }
+                    break;
+                // ============================================
+                // THÊM MỚI - Xử lý response thêm bình luận
+                // ============================================
+                case "add_comment":
+                    var addCommentData = JsonConvert.DeserializeObject<Data_AddCommentJson>(json);
+                    if (addCommentData != null)
+                    {
+                        AddCommentResponse = addCommentData;
+                    }
+                    break;
+                // ============================================
+                // THÊM MỚI - Xử lý response lấy bình luận
+                // ============================================
+                case "get_comments":
+                    var getCommentsData = JsonConvert.DeserializeObject<Data_GetCommentsJson>(json);
+                    if (getCommentsData != null)
+                    {
+                        GetCommentsResponse = getCommentsData;
                     }
                     break;
                 default:
@@ -264,9 +321,28 @@ namespace PostEZ
             public string video_url { get; set; }
             public string timestamp { get; set; }
             public bool accept { get; set; }
-
+            public bool enabled { get; set; }
+            public int like_count { get; set; }  // ← THÊM like_count
+            public int comment_count { get; set; }  // ← THÊM comment_count
             public string error { get; set; }
 
+            public string request_id { get; set; }
+        }
+
+        public class Data_InformationUserJson
+        {
+            public string action { get; set; }
+            public string username { get; set; }
+            public string password { get; set; }
+            public string email { get; set; }
+            public string phone { get; set; }
+            public string bio { get; set; }
+            public string avatar_url { get; set; }
+            public int count_posts { get; set; }
+            public int count_followers { get; set; }
+            public List<Data_PostJson> posts_user { get; set; }
+            public bool accept { get; set; }
+            public string error { get; set; }
             public string request_id { get; set; }
         }
 
@@ -305,7 +381,7 @@ namespace PostEZ
             public string video_url { get; set; }
             public string timestamp { get; set; }
             public bool accept { get; set; }
-
+            public bool enabled { get; set; }
             public string error { get; set; }
 
             public string request_id { get; set; }
@@ -321,10 +397,95 @@ namespace PostEZ
             public bool accept { get; set; }
             public bool delete_post { get; set; }
             public bool reply_post { get; set; }
-
+            public bool enabled { get; set; }
             public string error { get; set; }
 
             public string request_id { get; set; }
+        }
+
+        // ============================================
+        // THÊM MỚI - Class cho action update_user_avatar
+        // ============================================
+        public class Data_UpdateAvatarJson
+        {
+            public string action { get; set; }
+            public string username { get; set; }
+            public string avatar_url { get; set; }
+            public string error { get; set; }
+            public bool accept { get; set; }
+            public string request_id { get; set; }
+        }
+
+        // ============================================
+        // THÊM MỚI - Class cho action like_post
+        // ============================================
+        public class Data_LikePostJson
+        {
+            public string action { get; set; }
+            public string post_id { get; set; }
+            public string username { get; set; }
+            public bool liked { get; set; }
+            public int like_count { get; set; }
+            public string error { get; set; }
+            public bool accept { get; set; }
+            public string request_id { get; set; }
+        }
+
+        public class Data_CommentJson
+        {
+            public string comment_id { get; set; }
+            public string username { get; set; }
+            public string content { get; set; }
+            public string timestamp { get; set; }
+        }
+
+        // ============================================
+        // THÊM MỚI - Class cho action add_comment
+        // ============================================
+        public class Data_AddCommentJson
+        {
+            public string action { get; set; }
+            public string post_id { get; set; }
+            public string username { get; set; }
+            public string comment_id { get; set; }
+            public string content { get; set; }
+            public string timestamp { get; set; }
+            public int comment_count { get; set; }
+            public string error { get; set; }
+            public bool accept { get; set; }
+            public string request_id { get; set; }
+        }
+
+        // ============================================
+        // THÊM MỚI - Class cho action get_comments
+        // ============================================
+        public class Data_GetCommentsJson
+        {
+            public string action { get; set; }
+            public string post_id { get; set; }
+            public List<Data_CommentJson> comments { get; set; }
+            public int count { get; set; }
+            public string error { get; set; }
+            public bool accept { get; set; }
+            public string request_id { get; set; }
+        }
+
+        public static async Task<bool> WaitForServerResponse(Func<bool> checkCondition, int timeoutSeconds = 10)
+        {
+            int maxAttempts = timeoutSeconds * 10; // 10 lần mỗi giây (100ms mỗi lần)
+            int attempts = 0;
+
+            while (!checkCondition())
+            {
+                attempts++;
+                if (attempts >= maxAttempts)
+                {
+                    return false; // Timeout
+                }
+                await Task.Delay(100);
+            }
+
+            return true; // Thành công
         }
 
         public static string GenerateRandomString(int length)
@@ -337,6 +498,5 @@ namespace PostEZ
               .Select(s => s[random.Next(s.Length)])
               .ToArray());
         }
-
     }
 }

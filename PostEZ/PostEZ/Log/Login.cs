@@ -15,6 +15,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using static PostEZ.Load_Data;
 
 namespace PostEZ.Log
 {
@@ -104,7 +105,7 @@ namespace PostEZ.Log
             return Regex.IsMatch(password, pattern);
         }
 
-        private void btn_login_Click(object sender, EventArgs e)
+        private async void btn_login_Click(object sender, EventArgs e)
         {
             if (string.IsNullOrWhiteSpace(tb_username.Text) || string.IsNullOrWhiteSpace(tb_password.Text))
             {
@@ -137,28 +138,26 @@ namespace PostEZ.Log
                 return;
             }
 
-            int i=0;
+            bool received = await Load_Data.WaitForServerResponse(
+                () => Load_Data.LoginData.request_id.Contains("ServerHaha")
+            );
 
-            while (!Load_Data.LoginData.request_id.Contains("ServerHaha"))
+            if (!received)
             {
-                i += 1;
-                if (i >=100)
-                {
-                    MessageBox.Show("Server không phản hồi kịp thời. Vui lòng thử lại sau!", "Lỗi");
-                    return;
-                }
-                System.Threading.Thread.Sleep(100);
-
-                continue;
+                MessageBox.Show("Server không phản hồi kịp thời. Vui lòng thử lại sau!", "Lỗi");
+                return;
             }
 
             MessageBox.Show(Load_Data.LoginData.error, "Thông báo");
 
             if (Load_Data.LoginData.accept)
             {
+
+
                 Dashboard dashboardForm = new Dashboard();
                 this.Hide();
                 dashboardForm.ShowDialog();
+                this.Show();
             }
         }
     }

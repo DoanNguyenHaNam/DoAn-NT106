@@ -31,7 +31,7 @@ namespace PostEZ.Log
             loginForm.ShowDialog();
         }
 
-        private void btn_signup_Click(object sender, EventArgs e)
+        private async void btn_signup_Click(object sender, EventArgs e)
         {
             if (string.IsNullOrEmpty(tb_username.Text) || string.IsNullOrEmpty(tb_password.Text) || string.IsNullOrEmpty(tb_repass.Text) || string.IsNullOrEmpty(tb_phone.Text) || string.IsNullOrEmpty(tb_mail.Text))
             {
@@ -80,19 +80,14 @@ namespace PostEZ.Log
                 return;
             }
 
-            int i = 0;
+            bool received = await Load_Data.WaitForServerResponse(
+                () => Load_Data.SignupData.request_id.Contains("ServerHaha")
+            );
 
-            while (!Load_Data.SignupData.request_id.Contains("ServerHaha"))
+            if (!received)
             {
-                i += 1;
-                if (i >= 100)
-                {
-                    MessageBox.Show("Server không phản hồi kịp thời. Vui lòng thử lại sau!", "Lỗi");
-                    return;
-                }
-                System.Threading.Thread.Sleep(100);
-
-                continue;
+                MessageBox.Show("Server không phản hồi kịp thời. Vui lòng thử lại sau!", "Lỗi");
+                return;
             }
 
             MessageBox.Show(Load_Data.SignupData.error, "Thông báo");
