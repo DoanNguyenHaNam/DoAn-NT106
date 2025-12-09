@@ -24,6 +24,7 @@ namespace PostEZ.Main
         public Dashboard()
         {
             InitializeComponent();
+            this.StartPosition = FormStartPosition.CenterScreen;
         }
 
         private async void Dashboard_Load(object sender, EventArgs e)
@@ -49,7 +50,7 @@ namespace PostEZ.Main
             }
 
             bool received = await Load_Data.WaitForServerResponse(
-                () => Load_Data.getFeedResponse.request_id.Contains("ServerHaha"),
+                () => Load_Data.getFeedResponse.request_id != null && Load_Data.getFeedResponse.request_id.Contains("ServerHaha"),
                 timeoutSeconds: 15 // Tăng timeout lên 15s
             );
 
@@ -83,7 +84,7 @@ namespace PostEZ.Main
                 }
 
                 bool received2 = await Load_Data.WaitForServerResponse(
-                    () => Load_Data.InformationUser.request_id.Contains("ServerHaha")
+                    () => Load_Data.InformationUser.request_id != null && Load_Data.InformationUser.request_id.Contains("ServerHaha")
                 );
 
                 if (!received2)
@@ -154,7 +155,7 @@ namespace PostEZ.Main
                 if (!success) return;
 
                 bool received = await Load_Data.WaitForServerResponse(
-                    () => Load_Data.getFeedResponse.request_id.Contains("ServerHaha"),
+                    () => Load_Data.getFeedResponse.request_id != null && Load_Data.getFeedResponse.request_id.Contains("ServerHaha"),
                     timeoutSeconds: 10
                 );
 
@@ -661,9 +662,9 @@ namespace PostEZ.Main
                     return;
                 }
 
-                // Đợi response
+                // Đợi response với null check
                 bool received = await Load_Data.WaitForServerResponse(
-                    () => Load_Data.LikePostResponse.request_id.Contains("ServerHaha"),
+                    () => Load_Data.LikePostResponse.request_id != null && Load_Data.LikePostResponse.request_id.Contains("ServerHaha"),
                     timeoutSeconds: 5
                 );
 
@@ -699,67 +700,31 @@ namespace PostEZ.Main
         // ========================================
         // HANDLER NÚT COMMENT
         // ========================================
-        private async void btn_comment_Click(object sender, EventArgs e)
+        private void btn_comment_Click(object sender, EventArgs e)
         {
             Button btn = (Button)sender;
             int postId = (int)btn.Tag;
 
             try
             {
-                // Hiển thị form nhập comment (tạm thời dùng InputBox)
-                string commentContent = Interaction.InputBox(
-                    "Nhập bình luận của bạn:",
-                    "Comment",
-                    "",
-                    -1, -1
-                );
-
-                if (string.IsNullOrEmpty(commentContent)) return;
-
-                // Disable button
-                btn.Enabled = false;
-
-                var request = new
+                // Tìm post để lấy thông tin
+                var post = Load_Data.Posts.FirstOrDefault(p => p.id == postId);
+                if (post == null)
                 {
-                    action = "add_comment",
-                    post_id = postId,
-                    username = Load_Data.LoginData.username,
-                    content = commentContent,
-                    request_id = Load_Data.GenerateRandomString(4)
-                };
-
-                bool success = Load_Data.SendJson(request);
-                if (!success)
-                {
-                    MessageBox.Show("Không thể kết nối server!", "Lỗi");
+                    MessageBox.Show("Không tìm thấy bài viết!", "Lỗi");
                     return;
                 }
 
-                // Đợi response
-                bool received = await Load_Data.WaitForServerResponse(
-                    () => Load_Data.AddCommentResponse.request_id.Contains("ServerHaha"),
-                    timeoutSeconds: 5
-                );
+                // Mở form comment
+                PostComment commentForm = new PostComment(postId, post.username, post.content);
+                commentForm.ShowDialog();
 
-                if (received && Load_Data.AddCommentResponse.accept)
-                {
-                    MessageBox.Show("Đã thêm comment!", "Thành công");
-
-                    // Cập nhật số lượng comment
-                    btn.Text = $"💬 {Load_Data.AddCommentResponse.comment_count}";
-                }
-                else if (received)
-                {
-                    MessageBox.Show(Load_Data.AddCommentResponse.error, "Lỗi");
-                }
+                // Sau khi đóng form comment, refresh feed để cập nhật số lượng comment
+                _ = RefreshFeed();
             }
             catch (Exception ex)
             {
                 MessageBox.Show("Lỗi: " + ex.Message, "Lỗi");
-            }
-            finally
-            {
-                btn.Enabled = true;
             }
         }
 
@@ -830,7 +795,7 @@ namespace PostEZ.Main
                 }
 
                 bool received = await Load_Data.WaitForServerResponse(
-                    () => Load_Data.getFeedResponse.request_id.Contains("ServerHaha"),
+                    () => Load_Data.getFeedResponse.request_id != null && Load_Data.getFeedResponse.request_id.Contains("ServerHaha"),
                     timeoutSeconds: 15
                 );
 
@@ -882,7 +847,7 @@ namespace PostEZ.Main
                 if (!success) return;
 
                 bool received = await Load_Data.WaitForServerResponse(
-                    () => Load_Data.InformationUser.request_id.Contains("ServerHaha"),
+                    () => Load_Data.InformationUser.request_id != null && Load_Data.InformationUser.request_id.Contains("ServerHaha"),
                     timeoutSeconds: 10
                 );
 

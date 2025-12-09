@@ -17,6 +17,7 @@ namespace PostEZ.Log
         public SignUp()
         {
             InitializeComponent();
+            this.StartPosition = FormStartPosition.CenterScreen;
         }
 
         private void SignUp_Load(object sender, EventArgs e)
@@ -81,7 +82,7 @@ namespace PostEZ.Log
             }
 
             bool received = await Load_Data.WaitForServerResponse(
-                () => Load_Data.SignupData.request_id.Contains("ServerHaha")
+                () => Load_Data.SignupData.request_id != null && Load_Data.SignupData.request_id.Contains("ServerHaha")
             );
 
             if (!received)

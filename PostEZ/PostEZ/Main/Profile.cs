@@ -208,7 +208,7 @@ namespace PostEZ.Main
 
                 // Đợi phản hồi từ server
                 bool received = await Load_Data.WaitForServerResponse(
-                    () => Load_Data.UpdateAvatar.request_id.Contains("ServerHaha"),
+                    () => Load_Data.UpdateAvatar.request_id != null && Load_Data.UpdateAvatar.request_id.Contains("ServerHaha"),
                     timeoutSeconds: 15
                 );
 
@@ -228,6 +228,9 @@ namespace PostEZ.Main
 
         private async void Profile_Load(object sender, EventArgs e)
         {
+            // Đặt form ở giữa màn hình
+            this.StartPosition = FormStartPosition.CenterScreen;
+            
             await Login.LoadFromUrl("https://pminmod.site/doannt106/logo.png", pic_logo);
             MakeCircular(pic_avatar);
             
@@ -258,7 +261,7 @@ namespace PostEZ.Main
                 }
 
                 bool received = await Load_Data.WaitForServerResponse(
-                    () => Load_Data.InformationUser.request_id.Contains("ServerHaha"),
+                    () => Load_Data.InformationUser.request_id != null && Load_Data.InformationUser.request_id.Contains("ServerHaha"),
                     timeoutSeconds: 15
                 );
 

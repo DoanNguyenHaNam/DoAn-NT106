@@ -24,6 +24,7 @@ namespace PostEZ.Log
         public Login()
         {
             InitializeComponent();
+            this.StartPosition = FormStartPosition.CenterScreen;
         }
 
         private void pictureBox1_Click(object sender, EventArgs e)
@@ -139,7 +140,7 @@ namespace PostEZ.Log
             }
 
             bool received = await Load_Data.WaitForServerResponse(
-                () => Load_Data.LoginData.request_id.Contains("ServerHaha")
+                () => Load_Data.LoginData.request_id != null && Load_Data.LoginData.request_id.Contains("ServerHaha")
             );
 
             if (!received)

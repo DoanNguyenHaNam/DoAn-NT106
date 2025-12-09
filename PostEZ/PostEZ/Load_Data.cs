@@ -21,6 +21,7 @@ namespace PostEZ
         public Load_Data()
         {
             InitializeComponent();
+            this.StartPosition = FormStartPosition.CenterScreen;
         }
 
         // ============================================

@@ -380,7 +380,7 @@ namespace PostEZ.Main
                 }
 
                 bool received = await Load_Data.WaitForServerResponse(
-                    () => Load_Data.CreatePost.request_id.Contains("ServerHaha"),
+                    () => Load_Data.CreatePost.request_id != null && Load_Data.CreatePost.request_id.Contains("ServerHaha"),
                     timeoutSeconds: 15 // Tăng timeout lên 15s
                 );
 
