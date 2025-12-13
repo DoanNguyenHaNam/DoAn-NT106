@@ -1,4 +1,4 @@
-using PostEZ.Log;
+Ôªøusing PostEZ.Log;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -33,7 +33,7 @@ namespace PostEZ.Main
 
 
             // ========================================
-            // REQUEST: L?y danh s·ch b‡i dang
+            // REQUEST: L·∫•y danh s√°ch b√†i ƒëƒÉng
             // ========================================
             Load_Data.getFeedResponse = new GetFeedResponse
             {
@@ -45,18 +45,17 @@ namespace PostEZ.Main
             bool success = Load_Data.SendJson(Load_Data.getFeedResponse);
             if (!success)
             {
-                MessageBox.Show("KhÙng th? g?i d? li?u t?i server!", "L?i");
+                MessageBox.Show("Kh√¥ng th·ªÉ t·∫£i d·ªØ li·ªáu t·ª´ server!", "L·ªói");
                 return;
             }
 
             bool received = await Load_Data.WaitForServerResponse(
-                () => Load_Data.getFeedResponse.request_id != null && Load_Data.getFeedResponse.request_id.Contains("ServerHaha"),
-                timeoutSeconds: 15 // Tang timeout lÍn 15s
+                () => Load_Data.getFeedResponse.request_id != null && Load_Data.getFeedResponse.request_id.Contains("ServerHaha")
             );
 
             if (!received)
             {
-                MessageBox.Show("Server khÙng ph?n h?i k?p th?i (get_feed). Vui lÚng th? l?i sau!", "L?i");
+                MessageBox.Show("Server kh√¥ng ph·∫£n h·ªìi k·ªãp th·ªùi. Vui l√≤ng th·ª≠ l·∫°i sau!", "L·ªói");
                 return;
             }
 
@@ -67,19 +66,19 @@ namespace PostEZ.Main
 
 
                 // ========================================
-                // REQUEST 1: L?y thÙng tin user
+                // REQUEST 1: L·∫•y th√¥ng tin user
                 // ========================================
                 Load_Data.InformationUser = new Data_InformationUserJson
                 {
                     action = "get_user_info",
-                    username = Load_Data.LoginData.username, // ThÍm username d? server bi?t l?y info c?a ai
+                    username = Load_Data.LoginData.username, // Th√™m username ƒë·ªÉ server bi·∫øt l·∫•y info c·ªßa ai
                     request_id = Load_Data.GenerateRandomString(4)
                 };
 
                 bool success2 = Load_Data.SendJson(Load_Data.InformationUser);
                 if (!success2)
                 {
-                    MessageBox.Show("KhÙng th? g?i d? li?u t?i server!", "L?i");
+                    MessageBox.Show("Kh√¥ng th·ªÉ g·ª≠i d·ªØ li·ªáu t·ªõi server!", "L·ªói");
                     return;
                 }
 
@@ -89,7 +88,7 @@ namespace PostEZ.Main
 
                 if (!received2)
                 {
-                    MessageBox.Show("Server khÙng ph?n h?i k?p th?i (get_user_info). Vui lÚng th? l?i sau!", "L?i");
+                    MessageBox.Show("Server kh√¥ng ph·∫£n h·ªìi k·ªãp th·ªùi (get_user_info). Vui l√≤ng th·ª≠ l·∫°i sau!", "L·ªói");
                     return;
                 }
 
@@ -99,47 +98,36 @@ namespace PostEZ.Main
                 }
                 else
                 {
-                    MessageBox.Show("KhÙng th? t?i thÙng tin ngu?i d˘ng: " + Load_Data.InformationUser.error, "L?i");
+                    MessageBox.Show("Kh√¥ng th·ªÉ t·∫£i th√¥ng tin ng∆∞·ªùi d√πng: " + Load_Data.InformationUser.error, "L·ªói");
                 }
 
                 // ========================================
-                // B?T AUTO-REFRESH (T˘y ch?n - Comment dÚng du?i n?u khÙng mu?n)
+                // B·∫¨T AUTO-REFRESH (T√πy ch·ªçn - Comment d√≤ng d∆∞·ªõi n·∫øu kh√¥ng mu·ªën)
                 // ========================================
                 StartAutoRefresh();
 
             }
             else
             {
-                MessageBox.Show("–„ g?p l?i trong qu· trÏnh t?i b‡i dang: " + Load_Data.getFeedResponse.error, "ThÙng b·o");
+                MessageBox.Show("ƒê√£ g·∫∑p l·ªói trong qu√° tr√¨nh t·∫£i b√†i ƒëƒÉng: " + Load_Data.getFeedResponse.error, "Th√¥ng b√°o");
             }
         }
 
-        /// <summary>
-        /// B?t t? d?ng refresh feed m?i 30 gi‚y
-        /// </summary>
         private void StartAutoRefresh()
         {
-            // D?ng timer cu n?u cÛ
             autoRefreshTimer?.Dispose();
-
-            // T?o timer m?i - refresh m?i 30 gi‚y
             autoRefreshTimer = new System.Threading.Timer(async _ =>
             {
-                // Ch? refresh khi form dang visible v‡ khÙng cÛ dialog n‡o dang m?
                 if (this.Visible && !this.Modal)
                 {
-                    // Ch?y trÍn UI thread
                     this.BeginInvoke(new Action(async () =>
                     {
                         await RefreshFeedSilently();
                     }));
                 }
-            }, null, 30000, 30000); // 30000ms = 30 gi‚y
+            }, null, 30000, 30000);
         }
 
-        /// <summary>
-        /// Refresh feed khÙng hi?n thÙng b·o (ch?y ng?m)
-        /// </summary>
         private async Task RefreshFeedSilently()
         {
             try
@@ -164,39 +152,35 @@ namespace PostEZ.Main
                     Load_Data.Posts = Load_Data.getFeedResponse.posts;
                     await LoadPostsAsync();
 
-                    // Refresh thÙng tin user ng?m
                     await RefreshUserInfo();
                 }
             }
             catch
             {
-                // KhÙng hi?n th? l?i khi auto-refresh th?t b?i
+                
             }
         }
 
         //=============================================
-        //|||             B?T –?U T?O POST          |||
+        //|||             B·∫ÆT √ê·∫¶U T·∫†O POST          |||
         //=============================================
         private async Task LoadInforUserInToGroupBox()
         {
-            // Ki?m tra null
             if (Load_Data.InformationUser == null)
             {
                 return;
             }
 
-            // –?m b?o ch?y trÍn UI thread
             if (this.InvokeRequired)
             {
                 this.Invoke(new Action(() => LoadInforUserInToGroupBox()));
                 return;
             }
 
-            // C?p nh?t c·c label
             lb_username.Text = "User: " + Load_Data.InformationUser.username;
             lb_mail.Text = "Email: " + Load_Data.InformationUser.email;
-            lb_countpost.Text = "S? b‡i dang: " + Load_Data.InformationUser.count_posts;
-            lb_countfollower.Text = "Ngu?i theo dıi: " + Load_Data.InformationUser.count_followers;
+            lb_countpost.Text = "S·ªë b√†i dang: " + Load_Data.InformationUser.count_posts;
+            lb_countfollower.Text = "Ng∆∞·ªùi theo d√µi: " + Load_Data.InformationUser.count_followers;
             btn_main.Enabled = true;
             btn_profile.Enabled = true;
             btn_messenge.Enabled = true;
@@ -230,12 +214,11 @@ namespace PostEZ.Main
                 }
             }
 
-            // FIX: Ki?m tra null tru?c khi foreach
             if (Load_Data.Posts == null || Load_Data.Posts.Count == 0)
             {
                 Label lblNoPosts = new Label
                 {
-                    Text = "Chua cÛ b‡i dang n‡o",
+                    Text = "Ch∆∞a c√≥ b√†i ƒëƒÉng n√†o",
                     Location = new Point(10, 10),
                     AutoSize = true,
                     Font = new Font("Segoe UI", 10),
@@ -256,7 +239,6 @@ namespace PostEZ.Main
             }
         }
 
-        // Ki?m tra URL cÛ ph?i YouTube khÙng
         private bool IsYouTubeUrl(string? url)
         {
             if (string.IsNullOrEmpty(url))
@@ -267,7 +249,6 @@ namespace PostEZ.Main
                    url.Contains("youtube-nocookie.com");
         }
 
-        // Ki?m tra URL cÛ ph?i t? server (160.191.245.144) khÙng
         private bool IsServerVideoUrl(string? url)
         {
             if (string.IsNullOrEmpty(url))
@@ -276,24 +257,20 @@ namespace PostEZ.Main
             return url.Contains("160.191.245.144");
         }
 
-        // Ki?m tra URL cÛ h?p l? khÙng (ch? cho phÈp YouTube ho?c Server)
         private bool IsValidVideoUrl(string? url)
         {
             return IsYouTubeUrl(url) || IsServerVideoUrl(url);
         }
 
-        // L?y YouTube Video ID t? URL
         private string? GetYouTubeVideoId(string? url)
         {
             if (string.IsNullOrEmpty(url))
                 return null;
 
-            // X? l˝ URL d?ng: https://www.youtube.com/watch?v=VIDEO_ID
             var match = Regex.Match(url, @"(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})");
             if (match.Success)
                 return match.Groups[1].Value;
 
-            // X? l˝ URL d?ng: https://www.youtube.com/embed/VIDEO_ID
             match = Regex.Match(url, @"youtube\.com\/embed\/([a-zA-Z0-9_-]{11})");
             if (match.Success)
                 return match.Groups[1].Value;
@@ -304,7 +281,7 @@ namespace PostEZ.Main
         private async Task<GroupBox> CreatePostGroupBoxAsync(Data_PostJson post, int yPosition)
         {
             // ========================================
-            // T?O CARD HI?N –?I CHO B¿I –ANG
+            // T·∫†O CARD CHO B√ÄI ƒêƒÇNG
             // ========================================
             Panel cardPanel = new Panel
             {
@@ -317,10 +294,8 @@ namespace PostEZ.Main
                 Padding = new Padding(15)
             };
 
-            // T?o shadow effect b?ng c·ch v? border
             cardPanel.Paint += (s, e) =>
             {
-                // Draw rounded rectangle shadow
                 using (var shadowBrush = new SolidBrush(Color.FromArgb(20, 0, 0, 0)))
                 {
                     e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
@@ -329,7 +304,6 @@ namespace PostEZ.Main
                     e.Graphics.FillPath(shadowBrush, path);
                 }
                 
-                // Draw card background
                 using (var cardBrush = new SolidBrush(Color.White))
                 using (var borderPen = new Pen(Color.FromArgb(230, 230, 230), 1))
                 {
@@ -347,12 +321,11 @@ namespace PostEZ.Main
                 AutoSize = false,
                 Height = 100,
                 FlatStyle = FlatStyle.Flat,
-                BackColor = Color.White  // ? N?N TR?NG
+                BackColor = Color.White
             };
             gb_eachpost.Paint += (s, e) =>
             {
-                // ?n border c?a GroupBox
-                e.Graphics.Clear(Color.White);  // ? N?N TR?NG
+                e.Graphics.Clear(Color.White);
             };
 
             int currentY = 10;
@@ -365,29 +338,25 @@ namespace PostEZ.Main
                 Location = new Point(10, currentY),
                 Width = gb_eachpost.Width - 20,
                 Height = 50,
-                BackColor = Color.White  // ? N?N TR?NG
+                BackColor = Color.White
             };
 
-            // Avatar (trÚn)
             PictureBox picAvatar = new PictureBox
             {
                 Location = new Point(0, 0),
                 Size = new Size(45, 45),
                 SizeMode = PictureBoxSizeMode.Zoom,
-                BackColor = Color.White  // ? N?N TR?NG thay vÏ x·m
+                BackColor = Color.White
             };
             
-            // L‡m avatar trÚn
             System.Drawing.Drawing2D.GraphicsPath avatarPath = new System.Drawing.Drawing2D.GraphicsPath();
             avatarPath.AddEllipse(0, 0, picAvatar.Width, picAvatar.Height);
             picAvatar.Region = new Region(avatarPath);
             
-            // Load avatar th?c c?a user
             _ = LoadUserAvatarAsync(post.username, picAvatar);
             
             headerPanel.Controls.Add(picAvatar);
 
-            // Username (bold, m‡u d?m)
             Label lblUsername = new Label
             {
                 Text = post.username,
@@ -395,11 +364,10 @@ namespace PostEZ.Main
                 AutoSize = true,
                 Font = new Font("Segoe UI", 11, FontStyle.Bold),
                 ForeColor = Color.FromArgb(50, 50, 50),
-                BackColor = Color.White  // ? N?N TR?NG
+                BackColor = Color.White
             };
             headerPanel.Controls.Add(lblUsername);
 
-            // Timestamp (nh?, x·m)
             Label lblTime = new Label
             {
                 Text = FormatTimestamp(post.timestamp),
@@ -407,7 +375,7 @@ namespace PostEZ.Main
                 AutoSize = true,
                 Font = new Font("Segoe UI", 9),
                 ForeColor = Color.Gray,
-                BackColor = Color.White  // ? N?N TR?NG
+                BackColor = Color.White
             };
             headerPanel.Controls.Add(lblTime);
 
@@ -415,7 +383,7 @@ namespace PostEZ.Main
             currentY += headerPanel.Height + 10;
 
             // ========================================
-            // CONTENT (N?i dung b‡i vi?t)
+            // CONTENT
             // ========================================
             if (!string.IsNullOrEmpty(post.content))
             {
@@ -427,14 +395,14 @@ namespace PostEZ.Main
                     AutoSize = true,
                     Font = new Font("Segoe UI", 10),
                     ForeColor = Color.FromArgb(60, 60, 60),
-                    BackColor = Color.White  // ? N?N TR?NG
+                    BackColor = Color.White
                 };
                 gb_eachpost.Controls.Add(lblContent);
                 currentY += lblContent.Height + 15;
             }
 
             // ========================================
-            // IMAGE (v?i rounded corners)
+            // IMAGE
             // ========================================
             if (!string.IsNullOrEmpty(post.image_url))
             {
@@ -443,27 +411,26 @@ namespace PostEZ.Main
                     Location = new Point(15, currentY),
                     Width = gb_eachpost.Width - 30,
                     Height = ((gb_eachpost.Width - 30) / 16) * 9,
-                    BackColor = Color.White  // ? N?N TR?NG thay vÏ x·m nh?t
+                    BackColor = Color.White
                 };
                 
                 PictureBox picImage = new PictureBox
                 {
                     Dock = DockStyle.Fill,
                     SizeMode = PictureBoxSizeMode.Zoom,
-                    BackColor = Color.White  // ? N?N TR?NG
+                    BackColor = Color.White
                 };
                 
                 imageContainer.Controls.Add(picImage);
                 gb_eachpost.Controls.Add(imageContainer);
 
-                // Load ?nh
                 await LoadImageAsync(post.image_url, picImage);
 
                 currentY += imageContainer.Height + 15;
             }
 
             // ========================================
-            // VIDEO (gi? nguyÍn logic cu nhung style d?p hon)
+            // VIDEO
             // ========================================
             if (!string.IsNullOrEmpty(post.video_url))
             {
@@ -475,12 +442,12 @@ namespace PostEZ.Main
                         Width = gb_eachpost.Width - 30,
                         Height = ((gb_eachpost.Width - 30) / 16) * 9,
                         BorderStyle = BorderStyle.None,
-                        BackColor = Color.White  // ? N?N TR?NG
+                        BackColor = Color.White
                     };
 
                     Label lblLoadVideo = new Label
                     {
-                        Text = "? Nh?n d? ph·t video",
+                        Text = "‚ñ∂Ô∏è Nh·∫•n ƒë·ªÉ ph√°t video",
                         ForeColor = Color.FromArgb(70, 130, 180),
                         Font = new Font("Segoe UI", 12, FontStyle.Bold),
                         AutoSize = false,
@@ -492,7 +459,6 @@ namespace PostEZ.Main
                         Tag = post.video_url
                     };
 
-                    // Hover effect
                     lblLoadVideo.MouseEnter += (s, e) =>
                     {
                         lblLoadVideo.BackColor = Color.FromArgb(220, 235, 255);
@@ -640,7 +606,7 @@ namespace PostEZ.Main
                                                 <source src=""{videoUrl}"" type=""video/mp4"">
                                                 <source src=""{videoUrl}"" type=""video/webm"">
                                                 <source src=""{videoUrl}"" type=""video/ogg"">
-                                                TrÏnh duy?t khÙng h? tr? video.
+                                                Tr√¨nh duy·ªát kh√¥ng h·ªó tr·ª£ video.
                                             </video>
                                         </body>
                                         </html>
@@ -653,22 +619,22 @@ namespace PostEZ.Main
                                 }
                                 else
                                 {
-                                    throw new Exception("KhÙng th? t?o video player");
+                                    throw new Exception("Kh√¥ng th·ªÉ t·∫°o video player");
                                 }
                             }
                             catch (Exception ex)
                             {
-                                MessageBox.Show("KhÙng th? ph·t video: " + ex.Message, "L?i");
+                                MessageBox.Show("Kh√¥ng th·ªÉ ph√°t video: " + ex.Message, "L·ªói");
 
                                 Label lblError = new Label
                                 {
-                                    Text = "? L?i: " + ex.Message,
+                                    Text = "‚ùå L·ªói: " + ex.Message,
                                     ForeColor = Color.Red,
                                     AutoSize = false,
                                     TextAlign = ContentAlignment.MiddleCenter,
                                     Width = videoPanel.Width,
                                     Height = videoPanel.Height,
-                                    BackColor = Color.White  // ? N?N TR?NG
+                                    BackColor = Color.White
                                 };
                                 videoPanel.Controls.Clear();
                                 videoPanel.Controls.Add(lblError);
@@ -684,12 +650,12 @@ namespace PostEZ.Main
                 {
                     Label lblInvalidVideo = new Label
                     {
-                        Text = "?? Video t? ngu?n khÙng du?c phÈp",
+                        Text = "üö´ Video t·ª´ ngu·ªìn kh√¥ng ƒë∆∞·ª£c ph√©p",
                         Location = new Point(15, currentY),
                         AutoSize = true,
                         Font = new Font("Segoe UI", 9),
                         ForeColor = Color.Orange,
-                        BackColor = Color.White  // ? N?N TR?NG
+                        BackColor = Color.White
                     };
                     gb_eachpost.Controls.Add(lblInvalidVideo);
                     currentY += lblInvalidVideo.Height + 15;
@@ -697,7 +663,7 @@ namespace PostEZ.Main
             }
 
             // ========================================
-            // ACTION BUTTONS (Like & Comment) - HI?N –?I H?N
+            // ACTION BUTTONS
             // ========================================
             Panel actionPanel = new Panel
             {
@@ -708,7 +674,6 @@ namespace PostEZ.Main
                 BorderStyle = BorderStyle.None
             };
 
-            // Rounded corners cho action panel
             actionPanel.Paint += (s, e) =>
             {
                 e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
@@ -720,41 +685,24 @@ namespace PostEZ.Main
                 }
             };
 
-            // Button Like (d?p hon)
             Button btnLike = new Button
             {
-                Text = $"?? {post.like_count}",
-                Location = new Point(10, 8),
-                Size = new Size(130, 32),
+                Text = $"ü§ç {post.like_count}",
+                Location = new Point(0, 5),
+                Size = new Size(120, 30),
                 Tag = post.id,
-                Font = new Font("Segoe UI", 10, FontStyle.Bold),
-                ForeColor = Color.FromArgb(100, 100, 100),
-                BackColor = Color.White,
+                Font = new Font("Segoe UI Emoji", 9), // <- use emoji-capable font
+                ForeColor = Color.Gray,
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand
             };
-            btnLike.FlatAppearance.BorderColor = Color.FromArgb(220, 220, 220);
-            btnLike.FlatAppearance.BorderSize = 1;
-            btnLike.FlatAppearance.MouseOverBackColor = Color.FromArgb(255, 240, 245);
+            btnLike.FlatAppearance.BorderColor = Color.LightGray;
             btnLike.Click += btn_like_Click;
-            
-            // Hover effect
-            btnLike.MouseEnter += (s, e) =>
-            {
-                btnLike.ForeColor = Color.FromArgb(220, 53, 69);
-            };
-            btnLike.MouseLeave += (s, e) =>
-            {
-                if (!btnLike.Text.StartsWith("??"))
-                    btnLike.ForeColor = Color.FromArgb(100, 100, 100);
-            };
-            
             actionPanel.Controls.Add(btnLike);
 
-            // Button Comment (d?p hon)
             Button btnComment = new Button
             {
-                Text = $"?? {post.comment_count}",
+                Text = $"üí¨ {post.comment_count}",
                 Location = new Point(150, 8),
                 Size = new Size(130, 32),
                 Tag = post.id,
@@ -789,16 +737,16 @@ namespace PostEZ.Main
             
             cardPanel.Controls.Add(gb_eachpost);
             
-            // HACK: Return cardPanel as GroupBox d? khÙng ph· v? logic cu
+            // HACK
             GroupBox wrapper = new GroupBox
             {
                 Location = cardPanel.Location,
                 Width = cardPanel.Width,
                 Height = cardPanel.Height,
                 FlatStyle = FlatStyle.Flat,
-                BackColor = Color.White  // ? N?N TR?NG
+                BackColor = Color.White
             };
-            wrapper.Paint += (s, e) => e.Graphics.Clear(Color.White);  // ? N?N TR?NG
+            wrapper.Paint += (s, e) => e.Graphics.Clear(Color.White);
             wrapper.Controls.Add(cardPanel);
             cardPanel.Location = new Point(0, 0);
             
@@ -806,7 +754,7 @@ namespace PostEZ.Main
         }
 
         // ========================================
-        // HELPER: T?o rounded rectangle
+        // HELPER
         // ========================================
         private System.Drawing.Drawing2D.GraphicsPath GetRoundedRectangle(Rectangle bounds, int radius)
         {
@@ -814,18 +762,14 @@ namespace PostEZ.Main
             int diameter = radius * 2;
             var arc = new Rectangle(bounds.Location, new Size(diameter, diameter));
 
-            // Top left arc
             path.AddArc(arc, 180, 90);
 
-            // Top right arc
             arc.X = bounds.Right - diameter;
             path.AddArc(arc, 270, 90);
 
-            // Bottom right arc
             arc.Y = bounds.Bottom - diameter;
             path.AddArc(arc, 0, 90);
 
-            // Bottom left arc
             arc.X = bounds.Left;
             path.AddArc(arc, 90, 90);
 
@@ -834,67 +778,25 @@ namespace PostEZ.Main
         }
 
         // ========================================
-        // HELPER: Load avatar TH?C c?a user t? server
+        // HELPER
         // ========================================
         private async Task LoadUserAvatarAsync(string username, PictureBox pictureBox)
         {
             try
             {
-                // Request thÙng tin user t? server d? l?y avatar
-                var userInfoRequest = new Data_InformationUserJson
+                using (var httpClient = new HttpClient())
                 {
-                    action = "get_user_info",
-                    username = username,
-                    request_id = Load_Data.GenerateRandomString(4)
-                };
-
-                bool success = Load_Data.SendJson(userInfoRequest);
-                if (!success)
-                {
-                    // Fallback n?u khÙng g?i du?c
-                    pictureBox.BackColor = Color.WhiteSmoke;
-                    return;
-                }
-
-                // –?i response (timeout ng?n 3s)
-                bool received = await Load_Data.WaitForServerResponse(
-                    () => userInfoRequest.request_id != null && userInfoRequest.request_id.Contains("ServerHaha"),
-                    timeoutSeconds: 3
-                );
-
-                if (received && Load_Data.InformationUser != null && 
-                    Load_Data.InformationUser.username == username && 
-                    !string.IsNullOrEmpty(Load_Data.InformationUser.avatar_url))
-                {
-                    // Load avatar t? URL
-                    using (var httpClient = new HttpClient())
+                    httpClient.Timeout = TimeSpan.FromSeconds(3);
+                    string defaultAvatarUrl = "http://160.191.245.144/doanNT106/DB/USER/avatar/5.jpg";
+                    byte[] imageBytes = await httpClient.GetByteArrayAsync(defaultAvatarUrl);
+                    using (var ms = new MemoryStream(imageBytes))
                     {
-                        httpClient.Timeout = TimeSpan.FromSeconds(3);
-                        byte[] imageBytes = await httpClient.GetByteArrayAsync(Load_Data.InformationUser.avatar_url);
-                        using (var ms = new MemoryStream(imageBytes))
-                        {
-                            pictureBox.Image = Image.FromStream(ms);
-                        }
-                    }
-                }
-                else
-                {
-                    // Fallback: d˘ng avatar m?c d?nh
-                    using (var httpClient = new HttpClient())
-                    {
-                        httpClient.Timeout = TimeSpan.FromSeconds(3);
-                        string defaultAvatarUrl = "http://160.191.245.144/doanNT106/DB/USER/avatar/5.jpg";
-                        byte[] imageBytes = await httpClient.GetByteArrayAsync(defaultAvatarUrl);
-                        using (var ms = new MemoryStream(imageBytes))
-                        {
-                            pictureBox.Image = Image.FromStream(ms);
-                        }
+                        pictureBox.Image = Image.FromStream(ms);
                     }
                 }
             }
             catch
             {
-                // N?u load fail, d? background tr?ng v?i ch? c·i d?u
                 pictureBox.BackColor = Color.WhiteSmoke;
                 Label lblInitial = new Label
                 {
@@ -910,7 +812,7 @@ namespace PostEZ.Main
         }
 
         // ========================================
-        // HELPER: Format timestamp d?p hon
+        // HELPER
         // ========================================
         private string FormatTimestamp(string timestamp)
         {
@@ -922,16 +824,16 @@ namespace PostEZ.Main
                     DateTime localTime = dateTimeOffset.LocalDateTime;
                     
                     TimeSpan diff = DateTime.Now - localTime;
-                    
+
                     if (diff.TotalMinutes < 1)
-                        return "V?a xong";
+                        return "V·ª´a xong";
                     if (diff.TotalMinutes < 60)
-                        return $"{(int)diff.TotalMinutes} ph˙t tru?c";
+                        return $"{(int)diff.TotalMinutes} ph√∫t tr∆∞·ªõc";
                     if (diff.TotalHours < 24)
-                        return $"{(int)diff.TotalHours} gi? tru?c";
+                        return $"{(int)diff.TotalHours} gi·ªù tr∆∞·ªõc";
                     if (diff.TotalDays < 7)
-                        return $"{(int)diff.TotalDays} ng‡y tru?c";
-                    
+                        return $"{(int)diff.TotalDays} ng√†y tr∆∞·ªõc";
+
                     return localTime.ToString("dd/MM/yyyy HH:mm");
                 }
                 return timestamp;
@@ -943,7 +845,7 @@ namespace PostEZ.Main
         }
 
         // ========================================
-        // HANDLER N⁄T LIKE
+        // HANDLER N√öT LIKE
         // ========================================
         private async void btn_like_Click(object sender, EventArgs e)
         {
@@ -952,7 +854,6 @@ namespace PostEZ.Main
 
             try
             {
-                // Disable button d? tr·nh spam
                 btn.Enabled = false;
 
                 var request = new
@@ -966,38 +867,35 @@ namespace PostEZ.Main
                 bool success = Load_Data.SendJson(request);
                 if (!success)
                 {
-                    MessageBox.Show("KhÙng th? k?t n?i server!", "L?i");
+                    MessageBox.Show("Kh√¥ng th·ªÉ k·∫øt n·ªëi server!", "L·ªói");
                     return;
                 }
 
-                // –?i response v?i null check
                 bool received = await Load_Data.WaitForServerResponse(
-                    () => Load_Data.LikePostResponse.request_id != null && Load_Data.LikePostResponse.request_id.Contains("ServerHaha"),
-                    timeoutSeconds: 5
+                    () => Load_Data.LikePostResponse.request_id != null && Load_Data.LikePostResponse.request_id.Contains("ServerHaha")
                 );
 
                 if (received && Load_Data.LikePostResponse.accept)
                 {
-                    // C?p nh?t UI
                     if (Load_Data.LikePostResponse.liked)
                     {
-                        btn.Text = $"?? {Load_Data.LikePostResponse.like_count}";
+                        btn.Text = $"ü§ç {Load_Data.LikePostResponse.like_count}";
                         btn.ForeColor = Color.Red;
                     }
                     else
                     {
-                        btn.Text = $"?? {Load_Data.LikePostResponse.like_count}";
+                        btn.Text = $"ü§ç {Load_Data.LikePostResponse.like_count}";
                         btn.ForeColor = Color.Gray;
                     }
                 }
                 else if (received)
                 {
-                    MessageBox.Show(Load_Data.LikePostResponse.error, "L?i");
+                    MessageBox.Show(Load_Data.LikePostResponse.error, "L·ªói");
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("L?i: " + ex.Message, "L?i");
+                MessageBox.Show("L·ªói: " + ex.Message, "L·ªói");
             }
             finally
             {
@@ -1006,7 +904,7 @@ namespace PostEZ.Main
         }
 
         // ========================================
-        // HANDLER N⁄T COMMENT
+        // HANDLER N√öT COMMENT
         // ========================================
         private void btn_comment_Click(object sender, EventArgs e)
         {
@@ -1015,24 +913,21 @@ namespace PostEZ.Main
 
             try
             {
-                // TÏm post d? l?y thÙng tin
                 var post = Load_Data.Posts.FirstOrDefault(p => p.id == postId);
                 if (post == null)
                 {
-                    MessageBox.Show("KhÙng tÏm th?y b‡i vi?t!", "L?i");
+                    MessageBox.Show("Kh√¥ng t√¨m th·∫•y b√†i vi·∫øt!", "L·ªói");
                     return;
                 }
 
-                // M? form comment
                 PostComment commentForm = new PostComment(postId, post.username, post.content);
                 commentForm.ShowDialog();
 
-                // Sau khi dÛng form comment, refresh feed d? c?p nh?t s? lu?ng comment
                 _ = RefreshFeed();
             }
             catch (Exception ex)
             {
-                MessageBox.Show("L?i: " + ex.Message, "L?i");
+                MessageBox.Show("L·ªói: " + ex.Message, "L·ªói");
             }
         }
 
@@ -1055,7 +950,7 @@ namespace PostEZ.Main
                 pictureBox.BackColor = Color.LightGray;
                 Label lblError = new Label
                 {
-                    Text = "? KhÙng t?i du?c ?nh",
+                    Text = "‚ùå Kh√¥ng t·∫£i ƒë∆∞·ª£c ·∫£nh",
                     ForeColor = Color.Red,
                     AutoSize = false,
                     TextAlign = ContentAlignment.MiddleCenter,
@@ -1067,27 +962,20 @@ namespace PostEZ.Main
         }
 
         //=============================================
-        //|||             K?T TH⁄C T?O POST         |||
+        //|||             K·∫æT TH√öC T·∫†O POST         |||
         //=============================================
 
         private async void btn_main_Click(object sender, EventArgs e)
         {
-            // Refresh feed khi b?m n˙t Trang ch?
             await RefreshFeed();
         }
 
-        /// <summary>
-        /// Refresh feed - T?i l?i b‡i dang m?i t? server
-        /// </summary>
         private async Task RefreshFeed()
         {
             try
             {
-                // Disable button d? tr·nh spam click
                 btn_main.Enabled = false;
-                btn_main.Text = "–ang t?i...";
-
-                // Request l?y feed m?i
+                btn_main.Text = "ƒêang t·∫£i...";
                 Load_Data.getFeedResponse = new GetFeedResponse
                 {
                     action = "get_feed",
@@ -1098,18 +986,17 @@ namespace PostEZ.Main
                 bool success = Load_Data.SendJson(Load_Data.getFeedResponse);
                 if (!success)
                 {
-                    MessageBox.Show("KhÙng th? k?t n?i server!", "L?i");
+                    MessageBox.Show("Kh√¥ng th·ªÉ k·∫øt n·ªëi server!", "L·ªói");
                     return;
                 }
 
                 bool received = await Load_Data.WaitForServerResponse(
-                    () => Load_Data.getFeedResponse.request_id != null && Load_Data.getFeedResponse.request_id.Contains("ServerHaha"),
-                    timeoutSeconds: 15
+                    () => Load_Data.getFeedResponse.request_id != null && Load_Data.getFeedResponse.request_id.Contains("ServerHaha")
                 );
 
                 if (!received)
                 {
-                    MessageBox.Show("Server khÙng ph?n h?i!", "L?i");
+                    MessageBox.Show("Server kh√¥ng ph·∫£n h·ªìi!", "L·ªói");
                     return;
                 }
 
@@ -1118,28 +1005,24 @@ namespace PostEZ.Main
                     Load_Data.Posts = Load_Data.getFeedResponse.posts;
                     await LoadPostsAsync();
 
-                    // Refresh thÙng tin user sau khi refresh feed
                     await RefreshUserInfo();
                 }
                 else
                 {
-                    MessageBox.Show("L?i: " + Load_Data.getFeedResponse.error, "L?i");
+                    MessageBox.Show("L·ªói: " + Load_Data.getFeedResponse.error, "L·ªói");
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("L?i refresh: " + ex.Message, "L?i");
+                MessageBox.Show("L·ªói refresh: " + ex.Message, "L·ªói");
             }
             finally
             {
                 btn_main.Enabled = true;
-                btn_main.Text = "Trang ch?";
+                btn_main.Text = "Trang ch·ªß";
             }
         }
 
-        /// <summary>
-        /// Refresh thÙng tin user - C?p nh?t s? b‡i dang, follower
-        /// </summary>
         private async Task RefreshUserInfo()
         {
             try
@@ -1155,8 +1038,7 @@ namespace PostEZ.Main
                 if (!success) return;
 
                 bool received = await Load_Data.WaitForServerResponse(
-                    () => Load_Data.InformationUser.request_id != null && Load_Data.InformationUser.request_id.Contains("ServerHaha"),
-                    timeoutSeconds: 10
+                    () => Load_Data.InformationUser.request_id != null && Load_Data.InformationUser.request_id.Contains("ServerHaha")
                 );
 
                 if (received && Load_Data.InformationUser.accept)
@@ -1166,7 +1048,7 @@ namespace PostEZ.Main
             }
             catch
             {
-                // KhÙng hi?n th? l?i, ch? refresh ng?m
+
             }
         }
 
@@ -1176,8 +1058,6 @@ namespace PostEZ.Main
             this.Hide();
             profileForm.ShowDialog();
             this.Show();
-
-            // Refresh thÙng tin user sau khi quay l?i t? Profile
             await RefreshUserInfo();
         }
 
@@ -1190,22 +1070,19 @@ namespace PostEZ.Main
         {
             try
             {
-                // G?i logout request v? server d? xÛa session
                 bool logoutSuccess = await Load_Data.Logout();
                 
                 if (logoutSuccess)
                 {
-                    MessageBox.Show("–ang xu?t th‡nh cÙng!", "ThÙng b·o");
+                    MessageBox.Show("ƒêƒÉng xu·∫•t th√†nh c√¥ng!", "Th√¥ng b√°o");
                 }
                 
-                // –Ûng form dashboard (quay v? login)
                 Load_Data.LoginData.accept = false;
                 this.Close();
             }
             catch (Exception ex)
             {
-                MessageBox.Show("L?i khi dang xu?t: " + ex.Message, "L?i");
-                // V?n dÛng form d˘ cÛ l?i
+                MessageBox.Show("L·ªói khi ƒëƒÉng xu·∫•t: " + ex.Message, "L·ªói");
                 Load_Data.LoginData.accept = false;
                 this.Close();
             }
@@ -1220,20 +1097,15 @@ namespace PostEZ.Main
 
         private void tb_find_TextChanged(object sender, EventArgs e)
         {
-            // H?y timer cu n?u cÛ
             searchTimer?.Dispose();
-
-            // T?o timer m?i, delay 300ms
             searchTimer = new System.Threading.Timer(_ =>
             {
-                // –?m b?o to‡n b? logic ch?y trÍn UI thread
                 if (this.InvokeRequired)
                 {
                     this.BeginInvoke(new Action(async () =>
                     {
                         string searchText = tb_find.Text.Trim();
 
-                        // Th?c hi?n tÏm ki?m
                         if (string.IsNullOrWhiteSpace(searchText))
                         {
                             await LoadPostsAsync();
@@ -1261,14 +1133,12 @@ namespace PostEZ.Main
                     (!string.IsNullOrEmpty(post.username) && post.username.IndexOf(searchText, StringComparison.OrdinalIgnoreCase) >= 0))
                 .ToList();
 
-            // Temporarily store original posts
             var originalPosts = Load_Data.Posts;
             Load_Data.Posts = filteredPosts;
             await LoadPostsAsync();
             Load_Data.Posts = originalPosts;
         }
 
-        // Cleanup khi dÛng form
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
             autoRefreshTimer?.Dispose();

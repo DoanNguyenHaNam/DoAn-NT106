@@ -34,10 +34,8 @@ namespace PostEZ.Main
 
         private void InitializeCommentUI()
         {
-            // Tiêu đề form
             this.Text = $"Bình luận - Bài viết của {_postUsername}";
             
-            // GroupBox hiển thị bài viết
             GroupBox gbPost = new GroupBox
             {
                 Text = $"Bài viết của {_postUsername}",
@@ -58,7 +56,6 @@ namespace PostEZ.Main
             gbPost.Controls.Add(lblPostContent);
             this.Controls.Add(gbPost);
             
-            // Label số lượng comments
             lblCommentCount = new Label
             {
                 Text = "💬 Đang tải comments...",
@@ -69,7 +66,6 @@ namespace PostEZ.Main
             };
             this.Controls.Add(lblCommentCount);
             
-            // Panel scroll để hiển thị comments
             commentsPanel = new Panel
             {
                 Location = new Point(153, 150),
@@ -80,7 +76,6 @@ namespace PostEZ.Main
             };
             this.Controls.Add(commentsPanel);
             
-            // TextBox nhập comment
             txtComment = new TextBox
             {
                 Location = new Point(153, 390),
@@ -91,7 +86,6 @@ namespace PostEZ.Main
             };
             this.Controls.Add(txtComment);
             
-            // Button gửi comment
             btnSendComment = new Button
             {
                 Text = "📤 Gửi",
@@ -107,7 +101,6 @@ namespace PostEZ.Main
             btnSendComment.Click += BtnSendComment_Click;
             this.Controls.Add(btnSendComment);
             
-            // Sự kiện nút
             btn_main.Click += (s, e) => this.Close();
             btn_profile.Click += (s, e) => this.Close();
         }
@@ -127,7 +120,6 @@ namespace PostEZ.Main
                     lblCommentCount.Text = "💬 Đang tải comments...";
                 }
 
-                // Gửi request lấy comments
                 var request = new
                 {
                     action = "get_comments",
@@ -142,7 +134,6 @@ namespace PostEZ.Main
                     return;
                 }
 
-                // Đợi response
                 bool received = await Load_Data.WaitForServerResponse(
                     () => Load_Data.GetCommentsResponse.request_id != null && 
                           Load_Data.GetCommentsResponse.request_id.Contains("ServerHaha"),
@@ -223,7 +214,6 @@ namespace PostEZ.Main
                 BorderStyle = BorderStyle.FixedSingle
             };
 
-            // Username
             Label lblUsername = new Label
             {
                 Text = $"👤 {comment.username}",
@@ -234,7 +224,6 @@ namespace PostEZ.Main
             };
             panel.Controls.Add(lblUsername);
 
-            // Timestamp
             Label lblTime = new Label
             {
                 Text = FormatTimestamp(comment.timestamp),
@@ -246,7 +235,6 @@ namespace PostEZ.Main
             };
             panel.Controls.Add(lblTime);
 
-            // Content
             Label lblContent = new Label
             {
                 Text = comment.content,
@@ -258,7 +246,6 @@ namespace PostEZ.Main
             };
             panel.Controls.Add(lblContent);
 
-            // Điều chỉnh height theo content
             panel.Height = Math.Max(70, lblContent.Bottom + 10);
 
             return panel;
@@ -334,13 +321,10 @@ namespace PostEZ.Main
 
                 if (received && Load_Data.AddCommentResponse.accept)
                 {
-                    // Clear textbox
                     if (txtComment != null)
                     {
                         txtComment.Clear();
                     }
-
-                    // Reload comments
                     await LoadComments();
 
                     MessageBox.Show("Đã thêm bình luận!", "Thành công");

@@ -76,13 +76,6 @@ namespace PostEZ.Log
                 return false;
             }
 
-            // Regex:
-            // ^[a-zA-Z0-9]{4,20}$
-            // ^ : Bắt đầu chuỗi
-            // [a-zA-Z0-9] : Chỉ cho phép chữ cái (thường, hoa) và số
-            // {4,20} : Độ dài tối thiểu 4, tối đa 20 ký tự
-            // $ : Kết thúc chuỗi
-
             string pattern = @"^[a-zA-Z0-9]{4,20}$";
 
             return Regex.IsMatch(username, pattern);
@@ -93,13 +86,6 @@ namespace PostEZ.Log
             {
                 return false;
             }
-
-            // Regex phức hợp cho mật khẩu
-            // ^                     : Bắt đầu chuỗi
-            // (?=.*[0-9])           : Phải chứa ÍT NHẤT một chữ số (0-9)
-            // (?=.*[!@#$%^&*()_+}{":?/><.,;`~]) : Phải chứa ÍT NHẤT một ký tự đặc biệt (Bạn có thể thêm/bớt ký tự đặc biệt tùy ý)
-            // .{6,20}               : Tổng độ dài từ 6 đến 20 ký tự
-            // $                     : Kết thúc chuỗi
 
             string pattern = @"^(?=.*[0-9])(?=.*[!@#$%^&*()_+{}\[\]:""|\\;'.?/<>,]).{6,20}$";
 

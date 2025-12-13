@@ -29,7 +29,6 @@
         private void InitializeComponent()
         {
             groupBox1 = new GroupBox();
-            btn_profile = new Button();
             pic_logo = new PictureBox();
             btn_main = new Button();
             gb_PerOnline = new GroupBox();
@@ -40,7 +39,6 @@
             // 
             // groupBox1
             // 
-            groupBox1.Controls.Add(btn_profile);
             groupBox1.Controls.Add(pic_logo);
             groupBox1.Controls.Add(btn_main);
             groupBox1.Location = new Point(12, 12);
@@ -48,15 +46,6 @@
             groupBox1.Size = new Size(135, 426);
             groupBox1.TabIndex = 7;
             groupBox1.TabStop = false;
-            // 
-            // btn_profile
-            // 
-            btn_profile.Location = new Point(7, 194);
-            btn_profile.Name = "btn_profile";
-            btn_profile.Size = new Size(122, 34);
-            btn_profile.TabIndex = 12;
-            btn_profile.Text = "Trang cá nhân";
-            btn_profile.UseVisualStyleBackColor = true;
             // 
             // pic_logo
             // 
@@ -72,8 +61,9 @@
             btn_main.Name = "btn_main";
             btn_main.Size = new Size(122, 34);
             btn_main.TabIndex = 11;
-            btn_main.Text = "Trang chủ";
+            btn_main.Text = "Thoát";
             btn_main.UseVisualStyleBackColor = true;
+            btn_main.Click += btn_main_Click;
             // 
             // gb_PerOnline
             // 
@@ -112,7 +102,6 @@
         private GroupBox groupBox1;
         private GroupBox gb_PerOnline;
         private GroupBox gb_chat;
-        private Button btn_profile;
         private PictureBox pic_logo;
         private Button btn_main;
     }

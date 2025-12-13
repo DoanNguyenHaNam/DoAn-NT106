@@ -32,14 +32,12 @@ namespace PostEZ.Main
             try
             {
                 await Login.LoadFromUrl("https://pminmod.site/doannt106/logo.png", pic_logo);
-                
+
                 SetupUsersListPanel();
                 SetupChatPanel();
-                
-                // Load danh sách users online lần đầu
+
                 await LoadOnlineUsers();
-                
-                // BẬT AUTO-REFRESH cho messages và online users
+
                 StartAutoRefreshMessages();
             }
             catch (Exception ex)
@@ -71,8 +69,6 @@ namespace PostEZ.Main
         private void SetupChatPanel()
         {
             gb_chat.Text = "💬 Chat";
-            
-            // Label hiển thị đang chat với ai
             lblChatWith = new Label
             {
                 Text = "Chọn một user để chat",
@@ -82,8 +78,7 @@ namespace PostEZ.Main
                 ForeColor = Color.DodgerBlue
             };
             gb_chat.Controls.Add(lblChatWith);
-            
-            // Panel scroll để hiển thị tin nhắn
+
             chatPanel = new Panel
             {
                 Location = new Point(10, 50),
@@ -93,8 +88,7 @@ namespace PostEZ.Main
                 BackColor = Color.White
             };
             gb_chat.Controls.Add(chatPanel);
-            
-            // TextBox nhập tin nhắn
+
             txtMessage = new TextBox
             {
                 Location = new Point(10, chatPanel.Bottom + 10),
@@ -103,8 +97,7 @@ namespace PostEZ.Main
                 PlaceholderText = "Nhập tin nhắn..."
             };
             gb_chat.Controls.Add(txtMessage);
-            
-            // Button gửi tin nhắn
+
             btnSend = new Button
             {
                 Text = "📤 Gửi",
@@ -127,23 +120,18 @@ namespace PostEZ.Main
         // ============================================
         private void StartAutoRefreshMessages()
         {
-            // Dừng timer cũ nếu có
             autoRefreshTimer?.Dispose();
 
-            // Tạo timer mới - refresh mỗi 2 giây
             autoRefreshTimer = new System.Threading.Timer(async _ =>
             {
-                // Đảm bảo chạy trên UI thread
                 if (this.InvokeRequired)
                 {
                     this.BeginInvoke(new Action(async () =>
                     {
                         try
                         {
-                            // Refresh danh sách users online
                             await LoadOnlineUsers();
-                            
-                            // Nếu đang chat với ai đó, refresh tin nhắn
+
                             if (!string.IsNullOrEmpty(selectedUserToChat))
                             {
                                 await LoadMessages(selectedUserToChat, silentMode: true);
@@ -151,11 +139,11 @@ namespace PostEZ.Main
                         }
                         catch
                         {
-                            // Bỏ qua lỗi khi auto-refresh
+
                         }
                     }));
                 }
-            }, null, 2000, 2000); // 2000ms = 2 giây
+            }, null, 5000, 5000);
         }
 
         // ============================================
@@ -179,11 +167,9 @@ namespace PostEZ.Main
                     return;
                 }
 
-                // Đợi response
                 bool received = await Load_Data.WaitForServerResponse(
                     () => Load_Data.GetOnlineUsersResponse.request_id != null &&
-                          Load_Data.GetOnlineUsersResponse.request_id.Contains("ServerHaha"),
-                    timeoutSeconds: 10
+                          Load_Data.GetOnlineUsersResponse.request_id.Contains("ServerHaha")
                 );
 
                 if (received && Load_Data.GetOnlineUsersResponse.accept)
@@ -200,9 +186,9 @@ namespace PostEZ.Main
         private void DisplayOnlineUsers(List<string>? users)
         {
             if (usersListPanel == null) return;
-            
+
             usersListPanel.Controls.Clear();
-            
+
             if (users == null || users.Count == 0)
             {
                 Label lblNoUsers = new Label
@@ -220,10 +206,9 @@ namespace PostEZ.Main
             int yPosition = 10;
             foreach (var user in users)
             {
-                // Bỏ qua chính mình
                 if (user == Load_Data.LoginData.username)
                     continue;
-                
+
                 Button btnUser = new Button
                 {
                     Text = $"👤 {user}",
@@ -250,7 +235,7 @@ namespace PostEZ.Main
                     }
                     await LoadMessages(user);
                 };
-                
+
                 usersListPanel.Controls.Add(btnUser);
                 yPosition += 45;
             }
@@ -281,7 +266,7 @@ namespace PostEZ.Main
                 bool received = await Load_Data.WaitForServerResponse(
                     () => Load_Data.GetMessagesResponse.request_id != null &&
                           Load_Data.GetMessagesResponse.request_id.Contains("ServerHaha"),
-                    timeoutSeconds: 5
+                    timeoutSeconds: 1
                 );
 
                 if (received && Load_Data.GetMessagesResponse.accept)
@@ -301,13 +286,12 @@ namespace PostEZ.Main
         private void DisplayMessages(List<Load_Data.Data_MessageJson>? messages)
         {
             if (chatPanel == null) return;
-            
-            // Lưu vị trí scroll hiện tại
+
             int currentScroll = chatPanel.VerticalScroll.Value;
             bool wasAtBottom = (chatPanel.VerticalScroll.Value >= chatPanel.VerticalScroll.Maximum - chatPanel.Height);
-            
+
             chatPanel.Controls.Clear();
-            
+
             if (messages == null || messages.Count == 0)
             {
                 Label lblNoMessages = new Label
@@ -330,8 +314,6 @@ namespace PostEZ.Main
                 chatPanel.Controls.Add(msgPanel);
                 yPosition += msgPanel.Height + 10;
             }
-            
-            // Auto scroll to bottom nếu đang ở cuối
             if (wasAtBottom)
             {
                 chatPanel.AutoScrollPosition = new Point(0, chatPanel.VerticalScroll.Maximum);
@@ -435,13 +417,10 @@ namespace PostEZ.Main
 
                 if (received && Load_Data.SendMessageResponse.accept)
                 {
-                    // Clear textbox
                     if (txtMessage != null)
                     {
                         txtMessage.Clear();
                     }
-
-                    // Reload messages ngay lập tức
                     await LoadMessages(selectedUserToChat);
                 }
             }
@@ -458,11 +437,15 @@ namespace PostEZ.Main
             }
         }
 
-        // Cleanup khi đóng form
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
             autoRefreshTimer?.Dispose();
             base.OnFormClosing(e);
+        }
+
+        private void btn_main_Click(object sender, EventArgs e)
+        {
+            this.Close();
         }
     }
 }

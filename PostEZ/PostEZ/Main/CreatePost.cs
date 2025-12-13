@@ -21,7 +21,6 @@ namespace PostEZ.Main
         private string? uploadedImageUrl = null;
         private string? uploadedVideoUrl = null;
 
-        // URL PHP upload API
         private const string UPLOAD_API_URL = "http://160.191.245.144/doanNT106/upload.php";
 
         public CreatePost()
@@ -38,7 +37,6 @@ namespace PostEZ.Main
 
         private void ResetForm()
         {
-            // Reset tất cả
             tb_content.Clear();
             selectedImagePath = null;
             selectedVideoPath = null;
@@ -46,17 +44,14 @@ namespace PostEZ.Main
             uploadedImageUrl = null;
             uploadedVideoUrl = null;
 
-            // Reset preview
             pic_preview.Image = null;
             pic_preview.BackColor = Color.WhiteSmoke;
 
-            // Reset labels
             lb_image_status.Text = "Chưa chọn ảnh";
             lb_image_status.ForeColor = Color.Gray;
             lb_video_status.Text = "Chưa chọn video";
             lb_video_status.ForeColor = Color.Gray;
 
-            // Reset buttons
             btn_remove_image.Visible = false;
             btn_remove_video.Visible = false;
         }
@@ -86,7 +81,6 @@ namespace PostEZ.Main
                 {
                     selectedImagePath = openFileDialog.FileName;
 
-                    // Kiểm tra kích thước (10MB)
                     FileInfo fileInfo = new FileInfo(selectedImagePath);
                     if (fileInfo.Length > 10 * 1024 * 1024)
                     {
@@ -95,7 +89,6 @@ namespace PostEZ.Main
                         return;
                     }
 
-                    // Preview ảnh
                     try
                     {
                         pic_preview.Image = Image.FromFile(selectedImagePath);
@@ -141,12 +134,10 @@ namespace PostEZ.Main
 
             if (result == DialogResult.Yes)
             {
-                // Option 1: Upload video từ máy
                 SelectVideoFile();
             }
             else if (result == DialogResult.No)
             {
-                // Option 2: Nhập link YouTube
                 InputYouTubeLink();
             }
         }
@@ -162,7 +153,7 @@ namespace PostEZ.Main
                 if (openFileDialog.ShowDialog() == DialogResult.OK)
                 {
                     selectedVideoPath = openFileDialog.FileName;
-                    youtubeVideoUrl = null; // Reset YouTube URL
+                    youtubeVideoUrl = null;
 
                     FileInfo fileInfo = new FileInfo(selectedVideoPath);
                     if (fileInfo.Length > 100 * 1024 * 1024) // 100MB
@@ -188,7 +179,7 @@ namespace PostEZ.Main
                 if (url.Contains("youtube.com") || url.Contains("youtu.be"))
                 {
                     youtubeVideoUrl = url;
-                    selectedVideoPath = null; // Reset video file path
+                    selectedVideoPath = null;
                     lb_video_status.Text = "✅ YouTube: " + url;
                     lb_video_status.ForeColor = Color.Green;
                     btn_remove_video.Visible = true;
@@ -305,7 +296,6 @@ namespace PostEZ.Main
         // ============================================
         private async void btn_post_Click(object sender, EventArgs e)
         {
-            // Validate nội dung
             if (string.IsNullOrWhiteSpace(tb_content.Text))
             {
                 MessageBox.Show("Vui lòng nhập nội dung bài viết!", "Lỗi");
@@ -339,7 +329,7 @@ namespace PostEZ.Main
                     lb_image_status.ForeColor = Color.Green;
                 }
 
-                // 2. Upload video nếu có (chỉ khi là file, không phải YouTube link)
+                // 2. Upload video nếu có
                 if (!string.IsNullOrEmpty(selectedVideoPath))
                 {
                     lb_video_status.Text = "⏳ Đang upload video...";
@@ -361,7 +351,6 @@ namespace PostEZ.Main
                 }
                 else if (!string.IsNullOrEmpty(youtubeVideoUrl))
                 {
-                    // Nếu là YouTube link thì dùng luôn, không cần upload
                     uploadedVideoUrl = youtubeVideoUrl;
                 }
 
@@ -381,7 +370,7 @@ namespace PostEZ.Main
 
                 bool received = await Load_Data.WaitForServerResponse(
                     () => Load_Data.CreatePost.request_id != null && Load_Data.CreatePost.request_id.Contains("ServerHaha"),
-                    timeoutSeconds: 15 // Tăng timeout lên 15s
+                    timeoutSeconds: 1
                 );
 
                 if (!received)
@@ -391,7 +380,6 @@ namespace PostEZ.Main
                 }
                 else
                 {
-                    // 3. Hiển thị thông báo upload xong
                     if (Load_Data.CreatePost.error == "")
                     {
                         MessageBox.Show("Upload file thành công!\n\n" +
@@ -408,12 +396,6 @@ namespace PostEZ.Main
                     }
                 }
 
-                // TODO: Sau này bạn sẽ viết code gửi TCP request tại đây
-                // var createPostData = new Load_Data.Data_CreateNewPost { ... };
-                // bool success = Load_Data.SendJson(createPostData);
-                // ...
-
-                // Tạm thời đóng form
                 this.DialogResult = DialogResult.OK;
                 this.Close();
             }

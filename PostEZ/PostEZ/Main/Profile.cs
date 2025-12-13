@@ -11,14 +11,14 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using Label = System.Windows.Forms.Label; // Fix conflict
+using Label = System.Windows.Forms.Label;
 
 namespace PostEZ.Main
 {
     public partial class Profile : Form
     {
         private readonly string _username;
-        private Button? btnChangeAvatar; // Nút thay ảnh đại diện
+        private Button? btnChangeAvatar;
         private const string UPLOAD_API_URL = "http://160.191.245.144/doanNT106/upload.php";
 
         public Profile(string username)
@@ -37,7 +37,6 @@ namespace PostEZ.Main
             lb_name.TextAlign = ContentAlignment.MiddleCenter;
             lb_name.Padding = new Padding(6);
 
-            // Tạo nút thay ảnh (ẩn ban đầu)
             CreateChangeAvatarButton();
         }
 
@@ -58,14 +57,12 @@ namespace PostEZ.Main
             btnChangeAvatar.FlatAppearance.BorderSize = 0;
             btnChangeAvatar.Click += BtnChangeAvatar_Click;
 
-            // Thêm vào form (cùng container với pic_avatar)
             if (pic_avatar.Parent != null)
             {
                 pic_avatar.Parent.Controls.Add(btnChangeAvatar);
                 btnChangeAvatar.BringToFront();
             }
 
-            // Events để hiện/ẩn nút khi hover
             pic_avatar.MouseEnter += (s, e) => btnChangeAvatar.Visible = true;
             pic_avatar.MouseLeave += (s, e) => 
             {
@@ -94,7 +91,6 @@ namespace PostEZ.Main
                 {
                     string filePath = openFileDialog.FileName;
 
-                    // Kiểm tra kích thước
                     FileInfo fileInfo = new FileInfo(filePath);
                     if (fileInfo.Length > 5 * 1024 * 1024) // 5MB
                     {
@@ -107,7 +103,6 @@ namespace PostEZ.Main
                         btnChangeAvatar.Text = "⏳ Đang tải...";
                         btnChangeAvatar.Enabled = false;
 
-                        // Upload ảnh lên server
                         string? uploadedUrl = await UploadAvatarToServer(filePath);
                         
                         if (uploadedUrl == null)
@@ -116,7 +111,6 @@ namespace PostEZ.Main
                             return;
                         }
 
-                        // Gửi request cập nhật avatar về server qua TCP
                         bool updateSuccess = await UpdateAvatarOnServer(uploadedUrl);
                         
                         if (!updateSuccess)
@@ -125,10 +119,8 @@ namespace PostEZ.Main
                             return;
                         }
 
-                        // Cập nhật local
                         Load_Data.InformationUser.avatar_url = uploadedUrl;
                         
-                        // Cập nhật UI
                         await Login.LoadFromUrl(uploadedUrl, pic_avatar, showError: false);
                         MessageBox.Show("Cập nhật ảnh đại diện thành công!", "Thông báo");
                     }
@@ -190,7 +182,6 @@ namespace PostEZ.Main
         {
             try
             {
-                // Tạo request update avatar
                 Load_Data.UpdateAvatar = new Load_Data.Data_UpdateAvatarJson
                 {
                     action = "update_user_avatar",
@@ -199,14 +190,12 @@ namespace PostEZ.Main
                     request_id = Load_Data.GenerateRandomString(4)
                 };
 
-                // Gửi request
                 bool sent = Load_Data.SendJson(Load_Data.UpdateAvatar);
                 if (!sent)
                 {
                     return false;
                 }
 
-                // Đợi phản hồi từ server
                 bool received = await Load_Data.WaitForServerResponse(
                     () => Load_Data.UpdateAvatar.request_id != null && Load_Data.UpdateAvatar.request_id.Contains("ServerHaha"),
                     timeoutSeconds: 15
@@ -216,8 +205,6 @@ namespace PostEZ.Main
                 {
                     return false;
                 }
-
-                // Kiểm tra kết quả
                 return Load_Data.UpdateAvatar.accept;
             }
             catch
@@ -228,16 +215,13 @@ namespace PostEZ.Main
 
         private async void Profile_Load(object sender, EventArgs e)
         {
-            // Đặt form ở giữa màn hình
             this.StartPosition = FormStartPosition.CenterScreen;
             
             await Login.LoadFromUrl("https://pminmod.site/doannt106/logo.png", pic_logo);
             MakeCircular(pic_avatar);
             
-            // Load thông tin user (luôn request mới từ server để cập nhật)
             await LoadUserInfo();
             
-            // Load bài đăng của user
             await LoadUserPosts();
         }
 
@@ -245,7 +229,6 @@ namespace PostEZ.Main
         {
             try
             {
-                // Request từ server để lấy thông tin mới nhất (không dùng cache)
                 Load_Data.InformationUser = new Load_Data.Data_InformationUserJson
                 {
                     action = "get_user_info",
@@ -297,7 +280,6 @@ namespace PostEZ.Main
             lb_count.Text = "Số bài đăng: " + Load_Data.InformationUser.count_posts;
             lb_follower.Text = "Follower: " + Load_Data.InformationUser.count_followers;
 
-            // Load avatar
             if (!string.IsNullOrEmpty(Load_Data.InformationUser.avatar_url))
             {
                 _ = Login.LoadFromUrl(Load_Data.InformationUser.avatar_url, pic_avatar, showError: false);
@@ -308,7 +290,6 @@ namespace PostEZ.Main
 
         private async Task LoadUserPosts()
         {
-            // Tạo scroll panel nếu chưa có
             if (postsScrollPanel == null)
             {
                 postsScrollPanel = new Panel
@@ -325,7 +306,6 @@ namespace PostEZ.Main
                 postsScrollPanel.Controls.Clear();
             }
 
-            // Kiểm tra có posts không
             if (Load_Data.InformationUser?.posts_user == null || Load_Data.InformationUser.posts_user.Count == 0)
             {
                 Label lblNoPosts = new Label
@@ -340,7 +320,6 @@ namespace PostEZ.Main
                 return;
             }
 
-            // Tạo từng post (đơn giản hóa, không có ảnh/video)
             int yPosition = 10;
             foreach (var post in Load_Data.InformationUser.posts_user)
             {
@@ -371,7 +350,6 @@ namespace PostEZ.Main
             };
             gb.Controls.Add(lblContent);
 
-            // Tự động điều chỉnh height
             gb.Height = lblContent.Bottom + 15;
 
             return gb;
@@ -396,7 +374,6 @@ namespace PostEZ.Main
 
         private async void btn_profile_Click(object sender, EventArgs e)
         {
-            // Refresh profile
             await RefreshProfile();
         }
 
@@ -432,8 +409,6 @@ namespace PostEZ.Main
             this.Hide();
             createPost.ShowDialog();
             this.Show();
-            
-            // Refresh sau khi tạo bài mới
             _ = RefreshProfile();
         }
     }
