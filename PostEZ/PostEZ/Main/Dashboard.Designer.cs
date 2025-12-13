@@ -40,6 +40,7 @@
             lb_mail = new Label();
             lb_username = new Label();
             tb_find = new TextBox();
+            btn_messenge = new Button();
             groupBox1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pic_logo).BeginInit();
             gb_info.SuspendLayout();
@@ -47,6 +48,7 @@
             // 
             // groupBox1
             // 
+            groupBox1.Controls.Add(btn_messenge);
             groupBox1.Controls.Add(btn_profile);
             groupBox1.Controls.Add(btn_main);
             groupBox1.Controls.Add(pic_logo);
@@ -168,6 +170,17 @@
             tb_find.TabIndex = 8;
             tb_find.TextChanged += tb_find_TextChanged;
             // 
+            // btn_messenge
+            // 
+            btn_messenge.Enabled = false;
+            btn_messenge.Location = new Point(6, 225);
+            btn_messenge.Name = "btn_messenge";
+            btn_messenge.Size = new Size(122, 34);
+            btn_messenge.TabIndex = 3;
+            btn_messenge.Text = "Nhắn tin";
+            btn_messenge.UseVisualStyleBackColor = true;
+            btn_messenge.Click += button1_Click;
+            // 
             // Dashboard
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -202,5 +215,6 @@
         private Label lb_username;
         private Label lb_logout;
         private Label lb_countfollower;
+        private Button btn_messenge;
     }
 }

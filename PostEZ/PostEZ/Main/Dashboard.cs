@@ -1,4 +1,4 @@
-﻿using PostEZ.Log;
+using PostEZ.Log;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -20,7 +20,7 @@ namespace PostEZ.Main
     public partial class Dashboard : Form
     {
         private System.Threading.Timer? autoRefreshTimer;
-        
+
         public Dashboard()
         {
             InitializeComponent();
@@ -33,7 +33,7 @@ namespace PostEZ.Main
 
 
             // ========================================
-            // REQUEST: Lấy danh sách bài đăng
+            // REQUEST: L?y danh s�ch b�i dang
             // ========================================
             Load_Data.getFeedResponse = new GetFeedResponse
             {
@@ -45,18 +45,18 @@ namespace PostEZ.Main
             bool success = Load_Data.SendJson(Load_Data.getFeedResponse);
             if (!success)
             {
-                MessageBox.Show("Không thể gửi dữ liệu tới server!", "Lỗi");
+                MessageBox.Show("Kh�ng th? g?i d? li?u t?i server!", "L?i");
                 return;
             }
 
             bool received = await Load_Data.WaitForServerResponse(
                 () => Load_Data.getFeedResponse.request_id != null && Load_Data.getFeedResponse.request_id.Contains("ServerHaha"),
-                timeoutSeconds: 15 // Tăng timeout lên 15s
+                timeoutSeconds: 15 // Tang timeout l�n 15s
             );
 
             if (!received)
             {
-                MessageBox.Show("Server không phản hồi kịp thời (get_feed). Vui lòng thử lại sau!", "Lỗi");
+                MessageBox.Show("Server kh�ng ph?n h?i k?p th?i (get_feed). Vui l�ng th? l?i sau!", "L?i");
                 return;
             }
 
@@ -67,19 +67,19 @@ namespace PostEZ.Main
 
 
                 // ========================================
-                // REQUEST 1: Lấy thông tin user
+                // REQUEST 1: L?y th�ng tin user
                 // ========================================
                 Load_Data.InformationUser = new Data_InformationUserJson
                 {
                     action = "get_user_info",
-                    username = Load_Data.LoginData.username, // Thêm username để server biết lấy info của ai
+                    username = Load_Data.LoginData.username, // Th�m username d? server bi?t l?y info c?a ai
                     request_id = Load_Data.GenerateRandomString(4)
                 };
 
                 bool success2 = Load_Data.SendJson(Load_Data.InformationUser);
                 if (!success2)
                 {
-                    MessageBox.Show("Không thể gửi dữ liệu tới server!", "Lỗi");
+                    MessageBox.Show("Kh�ng th? g?i d? li?u t?i server!", "L?i");
                     return;
                 }
 
@@ -89,7 +89,7 @@ namespace PostEZ.Main
 
                 if (!received2)
                 {
-                    MessageBox.Show("Server không phản hồi kịp thời (get_user_info). Vui lòng thử lại sau!", "Lỗi");
+                    MessageBox.Show("Server kh�ng ph?n h?i k?p th?i (get_user_info). Vui l�ng th? l?i sau!", "L?i");
                     return;
                 }
 
@@ -99,46 +99,46 @@ namespace PostEZ.Main
                 }
                 else
                 {
-                    MessageBox.Show("Không thể tải thông tin người dùng: " + Load_Data.InformationUser.error, "Lỗi");
+                    MessageBox.Show("Kh�ng th? t?i th�ng tin ngu?i d�ng: " + Load_Data.InformationUser.error, "L?i");
                 }
 
                 // ========================================
-                // BẬT AUTO-REFRESH (Tùy chọn - Comment dòng dưới nếu không muốn)
+                // B?T AUTO-REFRESH (T�y ch?n - Comment d�ng du?i n?u kh�ng mu?n)
                 // ========================================
                 StartAutoRefresh();
 
             }
             else
             {
-                MessageBox.Show("Đã gặp lỗi trong quá trình tải bài đăng: " + Load_Data.getFeedResponse.error, "Thông báo");
+                MessageBox.Show("�� g?p l?i trong qu� tr�nh t?i b�i dang: " + Load_Data.getFeedResponse.error, "Th�ng b�o");
             }
         }
 
         /// <summary>
-        /// Bật tự động refresh feed mỗi 30 giây
+        /// B?t t? d?ng refresh feed m?i 30 gi�y
         /// </summary>
         private void StartAutoRefresh()
         {
-            // Dừng timer cũ nếu có
+            // D?ng timer cu n?u c�
             autoRefreshTimer?.Dispose();
 
-            // Tạo timer mới - refresh mỗi 30 giây
+            // T?o timer m?i - refresh m?i 30 gi�y
             autoRefreshTimer = new System.Threading.Timer(async _ =>
             {
-                // Chỉ refresh khi form đang visible và không có dialog nào đang mở
+                // Ch? refresh khi form dang visible v� kh�ng c� dialog n�o dang m?
                 if (this.Visible && !this.Modal)
                 {
-                    // Chạy trên UI thread
+                    // Ch?y tr�n UI thread
                     this.BeginInvoke(new Action(async () =>
                     {
                         await RefreshFeedSilently();
                     }));
                 }
-            }, null, 30000, 30000); // 30000ms = 30 giây
+            }, null, 30000, 30000); // 30000ms = 30 gi�y
         }
 
         /// <summary>
-        /// Refresh feed không hiện thông báo (chạy ngầm)
+        /// Refresh feed kh�ng hi?n th�ng b�o (ch?y ng?m)
         /// </summary>
         private async Task RefreshFeedSilently()
         {
@@ -163,42 +163,43 @@ namespace PostEZ.Main
                 {
                     Load_Data.Posts = Load_Data.getFeedResponse.posts;
                     await LoadPostsAsync();
-                    
-                    // Refresh thông tin user ngầm
+
+                    // Refresh th�ng tin user ng?m
                     await RefreshUserInfo();
                 }
             }
             catch
             {
-                // Không hiển thị lỗi khi auto-refresh thất bại
+                // Kh�ng hi?n th? l?i khi auto-refresh th?t b?i
             }
         }
 
         //=============================================
-        //|||             BẮT ĐẦU TẠO POST          |||
+        //|||             B?T �?U T?O POST          |||
         //=============================================
         private async Task LoadInforUserInToGroupBox()
         {
-            // Kiểm tra null
+            // Ki?m tra null
             if (Load_Data.InformationUser == null)
             {
                 return;
             }
 
-            // Đảm bảo chạy trên UI thread
+            // �?m b?o ch?y tr�n UI thread
             if (this.InvokeRequired)
             {
                 this.Invoke(new Action(() => LoadInforUserInToGroupBox()));
                 return;
             }
 
-            // Cập nhật các label
+            // C?p nh?t c�c label
             lb_username.Text = "User: " + Load_Data.InformationUser.username;
             lb_mail.Text = "Email: " + Load_Data.InformationUser.email;
-            lb_countpost.Text = "Số bài đăng: " + Load_Data.InformationUser.count_posts;
-            lb_countfollower.Text = "Người theo dõi: " + Load_Data.InformationUser.count_followers;
+            lb_countpost.Text = "S? b�i dang: " + Load_Data.InformationUser.count_posts;
+            lb_countfollower.Text = "Ngu?i theo d�i: " + Load_Data.InformationUser.count_followers;
             btn_main.Enabled = true;
             btn_profile.Enabled = true;
+            btn_messenge.Enabled = true;
             lb_logout.Enabled = true;
         }
 
@@ -229,12 +230,12 @@ namespace PostEZ.Main
                 }
             }
 
-            // FIX: Kiểm tra null trước khi foreach
+            // FIX: Ki?m tra null tru?c khi foreach
             if (Load_Data.Posts == null || Load_Data.Posts.Count == 0)
             {
                 Label lblNoPosts = new Label
                 {
-                    Text = "Chưa có bài đăng nào",
+                    Text = "Chua c� b�i dang n�o",
                     Location = new Point(10, 10),
                     AutoSize = true,
                     Font = new Font("Segoe UI", 10),
@@ -255,7 +256,7 @@ namespace PostEZ.Main
             }
         }
 
-        // Kiểm tra URL có phải YouTube không
+        // Ki?m tra URL c� ph?i YouTube kh�ng
         private bool IsYouTubeUrl(string? url)
         {
             if (string.IsNullOrEmpty(url))
@@ -266,7 +267,7 @@ namespace PostEZ.Main
                    url.Contains("youtube-nocookie.com");
         }
 
-        // Kiểm tra URL có phải từ server (160.191.245.144) không
+        // Ki?m tra URL c� ph?i t? server (160.191.245.144) kh�ng
         private bool IsServerVideoUrl(string? url)
         {
             if (string.IsNullOrEmpty(url))
@@ -275,24 +276,24 @@ namespace PostEZ.Main
             return url.Contains("160.191.245.144");
         }
 
-        // Kiểm tra URL có hợp lệ không (chỉ cho phép YouTube hoặc Server)
+        // Ki?m tra URL c� h?p l? kh�ng (ch? cho ph�p YouTube ho?c Server)
         private bool IsValidVideoUrl(string? url)
         {
             return IsYouTubeUrl(url) || IsServerVideoUrl(url);
         }
 
-        // Lấy YouTube Video ID từ URL
+        // L?y YouTube Video ID t? URL
         private string? GetYouTubeVideoId(string? url)
         {
             if (string.IsNullOrEmpty(url))
                 return null;
 
-            // Xử lý URL dạng: https://www.youtube.com/watch?v=VIDEO_ID
+            // X? l� URL d?ng: https://www.youtube.com/watch?v=VIDEO_ID
             var match = Regex.Match(url, @"(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})");
             if (match.Success)
                 return match.Groups[1].Value;
 
-            // Xử lý URL dạng: https://www.youtube.com/embed/VIDEO_ID
+            // X? l� URL d?ng: https://www.youtube.com/embed/VIDEO_ID
             match = Regex.Match(url, @"youtube\.com\/embed\/([a-zA-Z0-9_-]{11})");
             if (match.Success)
                 return match.Groups[1].Value;
@@ -302,91 +303,205 @@ namespace PostEZ.Main
 
         private async Task<GroupBox> CreatePostGroupBoxAsync(Data_PostJson post, int yPosition)
         {
+            // ========================================
+            // T?O CARD HI?N �?I CHO B�I �ANG
+            // ========================================
+            Panel cardPanel = new Panel
+            {
+                Location = new Point(10, yPosition),
+                Width = scrollPanel!.Width - 30,
+                AutoSize = false,
+                Height = 100,
+                BackColor = Color.White,
+                BorderStyle = BorderStyle.None,
+                Padding = new Padding(15)
+            };
+
+            // T?o shadow effect b?ng c�ch v? border
+            cardPanel.Paint += (s, e) =>
+            {
+                // Draw rounded rectangle shadow
+                using (var shadowBrush = new SolidBrush(Color.FromArgb(20, 0, 0, 0)))
+                {
+                    e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                    var rect = new Rectangle(2, 2, cardPanel.Width - 4, cardPanel.Height - 4);
+                    var path = GetRoundedRectangle(rect, 10);
+                    e.Graphics.FillPath(shadowBrush, path);
+                }
+                
+                // Draw card background
+                using (var cardBrush = new SolidBrush(Color.White))
+                using (var borderPen = new Pen(Color.FromArgb(230, 230, 230), 1))
+                {
+                    var rect = new Rectangle(0, 0, cardPanel.Width - 1, cardPanel.Height - 1);
+                    var path = GetRoundedRectangle(rect, 8);
+                    e.Graphics.FillPath(cardBrush, path);
+                    e.Graphics.DrawPath(borderPen, path);
+                }
+            };
+
             GroupBox gb_eachpost = new GroupBox
             {
-                Text = post.username,
-                Location = new Point(10, yPosition),
-                Width = scrollPanel!.Width - 50,
+                Location = new Point(0, 0),
+                Width = cardPanel.Width - 30,
                 AutoSize = false,
-                Height = 100
+                Height = 100,
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.White  // ? N?N TR?NG
             };
-            int currentY = 20;
+            gb_eachpost.Paint += (s, e) =>
+            {
+                // ?n border c?a GroupBox
+                e.Graphics.Clear(Color.White);  // ? N?N TR?NG
+            };
 
-            // Timestamp
+            int currentY = 10;
+
+            // ========================================
+            // HEADER: AVATAR + USERNAME + TIMESTAMP
+            // ========================================
+            Panel headerPanel = new Panel
+            {
+                Location = new Point(10, currentY),
+                Width = gb_eachpost.Width - 20,
+                Height = 50,
+                BackColor = Color.White  // ? N?N TR?NG
+            };
+
+            // Avatar (tr�n)
+            PictureBox picAvatar = new PictureBox
+            {
+                Location = new Point(0, 0),
+                Size = new Size(45, 45),
+                SizeMode = PictureBoxSizeMode.Zoom,
+                BackColor = Color.White  // ? N?N TR?NG thay v� x�m
+            };
+            
+            // L�m avatar tr�n
+            System.Drawing.Drawing2D.GraphicsPath avatarPath = new System.Drawing.Drawing2D.GraphicsPath();
+            avatarPath.AddEllipse(0, 0, picAvatar.Width, picAvatar.Height);
+            picAvatar.Region = new Region(avatarPath);
+            
+            // Load avatar th?c c?a user
+            _ = LoadUserAvatarAsync(post.username, picAvatar);
+            
+            headerPanel.Controls.Add(picAvatar);
+
+            // Username (bold, m�u d?m)
+            Label lblUsername = new Label
+            {
+                Text = post.username,
+                Location = new Point(55, 5),
+                AutoSize = true,
+                Font = new Font("Segoe UI", 11, FontStyle.Bold),
+                ForeColor = Color.FromArgb(50, 50, 50),
+                BackColor = Color.White  // ? N?N TR?NG
+            };
+            headerPanel.Controls.Add(lblUsername);
+
+            // Timestamp (nh?, x�m)
             Label lblTime = new Label
             {
-                Text = post.timestamp,
-                Location = new Point(10, currentY),
+                Text = FormatTimestamp(post.timestamp),
+                Location = new Point(55, 27),
                 AutoSize = true,
-                Font = new Font("Segoe UI", 8),
-                ForeColor = Color.Gray
+                Font = new Font("Segoe UI", 9),
+                ForeColor = Color.Gray,
+                BackColor = Color.White  // ? N?N TR?NG
             };
-            gb_eachpost.Controls.Add(lblTime);
-            currentY += lblTime.Height + 5;
+            headerPanel.Controls.Add(lblTime);
 
-            // Content
+            gb_eachpost.Controls.Add(headerPanel);
+            currentY += headerPanel.Height + 10;
+
+            // ========================================
+            // CONTENT (N?i dung b�i vi?t)
+            // ========================================
             if (!string.IsNullOrEmpty(post.content))
             {
                 Label lblContent = new Label
                 {
                     Text = post.content,
-                    Location = new Point(10, currentY),
+                    Location = new Point(15, currentY),
                     MaximumSize = new Size(gb_eachpost.Width - 30, 0),
                     AutoSize = true,
-                    Font = new Font("Segoe UI", 9)
+                    Font = new Font("Segoe UI", 10),
+                    ForeColor = Color.FromArgb(60, 60, 60),
+                    BackColor = Color.White  // ? N?N TR?NG
                 };
                 gb_eachpost.Controls.Add(lblContent);
-                currentY += lblContent.Height + 10;
+                currentY += lblContent.Height + 15;
             }
 
-            // Image
+            // ========================================
+            // IMAGE (v?i rounded corners)
+            // ========================================
             if (!string.IsNullOrEmpty(post.image_url))
             {
+                Panel imageContainer = new Panel
+                {
+                    Location = new Point(15, currentY),
+                    Width = gb_eachpost.Width - 30,
+                    Height = ((gb_eachpost.Width - 30) / 16) * 9,
+                    BackColor = Color.White  // ? N?N TR?NG thay v� x�m nh?t
+                };
+                
                 PictureBox picImage = new PictureBox
                 {
-                    Location = new Point(10, currentY),
-                    Width = gb_eachpost.Width - 30,
-                    Height = ((gb_eachpost.Width - 30) / 16) * 9, // Chiều cao tạm
+                    Dock = DockStyle.Fill,
                     SizeMode = PictureBoxSizeMode.Zoom,
-                    BorderStyle = BorderStyle.None,
-                    BackColor = Color.White
+                    BackColor = Color.White  // ? N?N TR?NG
                 };
-                gb_eachpost.Controls.Add(picImage);
+                
+                imageContainer.Controls.Add(picImage);
+                gb_eachpost.Controls.Add(imageContainer);
 
-                // Load ảnh và tự động điều chỉnh chiều cao
+                // Load ?nh
                 await LoadImageAsync(post.image_url, picImage);
 
-                currentY += picImage.Height + 10;
+                currentY += imageContainer.Height + 15;
             }
 
-            // Video - CHỈNH HẾT VỀ WEBVIEW2
+            // ========================================
+            // VIDEO (gi? nguy�n logic cu nhung style d?p hon)
+            // ========================================
             if (!string.IsNullOrEmpty(post.video_url))
             {
-                // Kiểm tra URL có hợp lệ không
                 if (IsValidVideoUrl(post.video_url))
                 {
                     Panel videoPanel = new Panel
                     {
-                        Location = new Point(10, currentY),
+                        Location = new Point(15, currentY),
                         Width = gb_eachpost.Width - 30,
                         Height = ((gb_eachpost.Width - 30) / 16) * 9,
                         BorderStyle = BorderStyle.None,
-                        BackColor = Color.White
+                        BackColor = Color.White  // ? N?N TR?NG
                     };
 
-                    // Tạo label để load video khi click
                     Label lblLoadVideo = new Label
                     {
-                        Text = "▶ Nhấn để phát video",
-                        ForeColor = Color.DimGray,
+                        Text = "? Nh?n d? ph�t video",
+                        ForeColor = Color.FromArgb(70, 130, 180),
                         Font = new Font("Segoe UI", 12, FontStyle.Bold),
                         AutoSize = false,
                         TextAlign = ContentAlignment.MiddleCenter,
                         Width = videoPanel.Width,
                         Height = videoPanel.Height,
                         Cursor = Cursors.Hand,
-                        BackColor = Color.WhiteSmoke,
+                        BackColor = Color.FromArgb(240, 248, 255),
                         Tag = post.video_url
+                    };
+
+                    // Hover effect
+                    lblLoadVideo.MouseEnter += (s, e) =>
+                    {
+                        lblLoadVideo.BackColor = Color.FromArgb(220, 235, 255);
+                        lblLoadVideo.ForeColor = Color.FromArgb(50, 100, 150);
+                    };
+                    lblLoadVideo.MouseLeave += (s, e) =>
+                    {
+                        lblLoadVideo.BackColor = Color.FromArgb(240, 248, 255);
+                        lblLoadVideo.ForeColor = Color.FromArgb(70, 130, 180);
                     };
 
                     lblLoadVideo.Click += async (s, e) =>
@@ -399,7 +514,6 @@ namespace PostEZ.Main
 
                             videoPanel.Controls.Clear();
 
-                            // Tạo WebView2
                             WebView2 webView = new WebView2
                             {
                                 Dock = DockStyle.Fill
@@ -413,10 +527,8 @@ namespace PostEZ.Main
 
                                 string videoHtml = "";
 
-                                // Kiểm tra loại video
                                 if (IsYouTubeUrl(videoUrl))
                                 {
-                                    // YOUTUBE: Dùng iframe embed - FIX Error 153
                                     string? videoId = GetYouTubeVideoId(videoUrl);
 
                                     if (!string.IsNullOrEmpty(videoId))
@@ -512,7 +624,6 @@ namespace PostEZ.Main
                                 }
                                 else if (IsServerVideoUrl(videoUrl))
                                 {
-                                    // VIDEO TỪ SERVER: Dùng HTML5 video tag
                                     videoHtml = $@"
                                         <!DOCTYPE html>
                                         <html>
@@ -529,7 +640,7 @@ namespace PostEZ.Main
                                                 <source src=""{videoUrl}"" type=""video/mp4"">
                                                 <source src=""{videoUrl}"" type=""video/webm"">
                                                 <source src=""{videoUrl}"" type=""video/ogg"">
-                                                Trình duyệt không hỗ trợ video.
+                                                Tr�nh duy?t kh�ng h? tr? video.
                                             </video>
                                         </body>
                                         </html>
@@ -542,21 +653,22 @@ namespace PostEZ.Main
                                 }
                                 else
                                 {
-                                    throw new Exception("Không thể tạo video player");
+                                    throw new Exception("Kh�ng th? t?o video player");
                                 }
                             }
                             catch (Exception ex)
                             {
-                                MessageBox.Show("Không thể phát video: " + ex.Message, "Lỗi");
+                                MessageBox.Show("Kh�ng th? ph�t video: " + ex.Message, "L?i");
 
                                 Label lblError = new Label
                                 {
-                                    Text = "❌ Lỗi: " + ex.Message,
+                                    Text = "? L?i: " + ex.Message,
                                     ForeColor = Color.Red,
                                     AutoSize = false,
                                     TextAlign = ContentAlignment.MiddleCenter,
                                     Width = videoPanel.Width,
-                                    Height = videoPanel.Height
+                                    Height = videoPanel.Height,
+                                    BackColor = Color.White  // ? N?N TR?NG
                                 };
                                 videoPanel.Controls.Clear();
                                 videoPanel.Controls.Add(lblError);
@@ -566,76 +678,272 @@ namespace PostEZ.Main
 
                     videoPanel.Controls.Add(lblLoadVideo);
                     gb_eachpost.Controls.Add(videoPanel);
-                    currentY += videoPanel.Height + 10;
+                    currentY += videoPanel.Height + 15;
                 }
                 else
                 {
-                    // URL không hợp lệ - hiển thị cảnh báo
                     Label lblInvalidVideo = new Label
                     {
-                        Text = "⚠️ Video từ nguồn không được phép",
-                        Location = new Point(10, currentY),
+                        Text = "?? Video t? ngu?n kh�ng du?c ph�p",
+                        Location = new Point(15, currentY),
                         AutoSize = true,
                         Font = new Font("Segoe UI", 9),
-                        ForeColor = Color.Orange
+                        ForeColor = Color.Orange,
+                        BackColor = Color.White  // ? N?N TR?NG
                     };
                     gb_eachpost.Controls.Add(lblInvalidVideo);
-                    currentY += lblInvalidVideo.Height + 10;
+                    currentY += lblInvalidVideo.Height + 15;
                 }
             }
 
             // ========================================
-            // THÊM NÚT LIKE VÀ COMMENT
+            // ACTION BUTTONS (Like & Comment) - HI?N �?I H?N
             // ========================================
             Panel actionPanel = new Panel
             {
                 Location = new Point(10, currentY),
-                Width = gb_eachpost.Width - 30,
-                Height = 40,
+                Width = gb_eachpost.Width - 20,
+                Height = 45,
+                BackColor = Color.FromArgb(250, 250, 250),
                 BorderStyle = BorderStyle.None
             };
 
-            // Button Like
+            // Rounded corners cho action panel
+            actionPanel.Paint += (s, e) =>
+            {
+                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                using (var brush = new SolidBrush(Color.FromArgb(250, 250, 250)))
+                {
+                    var rect = new Rectangle(0, 0, actionPanel.Width, actionPanel.Height);
+                    var path = GetRoundedRectangle(rect, 8);
+                    e.Graphics.FillPath(brush, path);
+                }
+            };
+
+            // Button Like (d?p hon)
             Button btnLike = new Button
             {
-                Text = $"🤍 {post.like_count}",
-                Location = new Point(0, 5),
-                Size = new Size(120, 30),
+                Text = $"?? {post.like_count}",
+                Location = new Point(10, 8),
+                Size = new Size(130, 32),
                 Tag = post.id,
-                Font = new Font("Segoe UI", 9),
-                ForeColor = Color.Gray,
+                Font = new Font("Segoe UI", 10, FontStyle.Bold),
+                ForeColor = Color.FromArgb(100, 100, 100),
+                BackColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand
             };
-            btnLike.FlatAppearance.BorderColor = Color.LightGray;
+            btnLike.FlatAppearance.BorderColor = Color.FromArgb(220, 220, 220);
+            btnLike.FlatAppearance.BorderSize = 1;
+            btnLike.FlatAppearance.MouseOverBackColor = Color.FromArgb(255, 240, 245);
             btnLike.Click += btn_like_Click;
+            
+            // Hover effect
+            btnLike.MouseEnter += (s, e) =>
+            {
+                btnLike.ForeColor = Color.FromArgb(220, 53, 69);
+            };
+            btnLike.MouseLeave += (s, e) =>
+            {
+                if (!btnLike.Text.StartsWith("??"))
+                    btnLike.ForeColor = Color.FromArgb(100, 100, 100);
+            };
+            
             actionPanel.Controls.Add(btnLike);
 
-            // Button Comment
+            // Button Comment (d?p hon)
             Button btnComment = new Button
             {
-                Text = $"💬 {post.comment_count}",
-                Location = new Point(130, 5),
-                Size = new Size(120, 30),
+                Text = $"?? {post.comment_count}",
+                Location = new Point(150, 8),
+                Size = new Size(130, 32),
                 Tag = post.id,
-                Font = new Font("Segoe UI", 9),
-                ForeColor = Color.Gray,
+                Font = new Font("Segoe UI", 10, FontStyle.Bold),
+                ForeColor = Color.FromArgb(100, 100, 100),
+                BackColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand
             };
-            btnComment.FlatAppearance.BorderColor = Color.LightGray;
+            btnComment.FlatAppearance.BorderColor = Color.FromArgb(220, 220, 220);
+            btnComment.FlatAppearance.BorderSize = 1;
+            btnComment.FlatAppearance.MouseOverBackColor = Color.FromArgb(240, 248, 255);
             btnComment.Click += btn_comment_Click;
+            
+            // Hover effect
+            btnComment.MouseEnter += (s, e) =>
+            {
+                btnComment.ForeColor = Color.FromArgb(0, 123, 255);
+            };
+            btnComment.MouseLeave += (s, e) =>
+            {
+                btnComment.ForeColor = Color.FromArgb(100, 100, 100);
+            };
+            
             actionPanel.Controls.Add(btnComment);
 
             gb_eachpost.Controls.Add(actionPanel);
-            currentY += actionPanel.Height + 10;
+            currentY += actionPanel.Height + 15;
 
-            gb_eachpost.Height = currentY + 10;
-            return gb_eachpost;
+            gb_eachpost.Height = currentY;
+            cardPanel.Height = currentY + 20;
+            
+            cardPanel.Controls.Add(gb_eachpost);
+            
+            // HACK: Return cardPanel as GroupBox d? kh�ng ph� v? logic cu
+            GroupBox wrapper = new GroupBox
+            {
+                Location = cardPanel.Location,
+                Width = cardPanel.Width,
+                Height = cardPanel.Height,
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.White  // ? N?N TR?NG
+            };
+            wrapper.Paint += (s, e) => e.Graphics.Clear(Color.White);  // ? N?N TR?NG
+            wrapper.Controls.Add(cardPanel);
+            cardPanel.Location = new Point(0, 0);
+            
+            return wrapper;
         }
 
         // ========================================
-        // HANDLER NÚT LIKE
+        // HELPER: T?o rounded rectangle
+        // ========================================
+        private System.Drawing.Drawing2D.GraphicsPath GetRoundedRectangle(Rectangle bounds, int radius)
+        {
+            var path = new System.Drawing.Drawing2D.GraphicsPath();
+            int diameter = radius * 2;
+            var arc = new Rectangle(bounds.Location, new Size(diameter, diameter));
+
+            // Top left arc
+            path.AddArc(arc, 180, 90);
+
+            // Top right arc
+            arc.X = bounds.Right - diameter;
+            path.AddArc(arc, 270, 90);
+
+            // Bottom right arc
+            arc.Y = bounds.Bottom - diameter;
+            path.AddArc(arc, 0, 90);
+
+            // Bottom left arc
+            arc.X = bounds.Left;
+            path.AddArc(arc, 90, 90);
+
+            path.CloseFigure();
+            return path;
+        }
+
+        // ========================================
+        // HELPER: Load avatar TH?C c?a user t? server
+        // ========================================
+        private async Task LoadUserAvatarAsync(string username, PictureBox pictureBox)
+        {
+            try
+            {
+                // Request th�ng tin user t? server d? l?y avatar
+                var userInfoRequest = new Data_InformationUserJson
+                {
+                    action = "get_user_info",
+                    username = username,
+                    request_id = Load_Data.GenerateRandomString(4)
+                };
+
+                bool success = Load_Data.SendJson(userInfoRequest);
+                if (!success)
+                {
+                    // Fallback n?u kh�ng g?i du?c
+                    pictureBox.BackColor = Color.WhiteSmoke;
+                    return;
+                }
+
+                // �?i response (timeout ng?n 3s)
+                bool received = await Load_Data.WaitForServerResponse(
+                    () => userInfoRequest.request_id != null && userInfoRequest.request_id.Contains("ServerHaha"),
+                    timeoutSeconds: 3
+                );
+
+                if (received && Load_Data.InformationUser != null && 
+                    Load_Data.InformationUser.username == username && 
+                    !string.IsNullOrEmpty(Load_Data.InformationUser.avatar_url))
+                {
+                    // Load avatar t? URL
+                    using (var httpClient = new HttpClient())
+                    {
+                        httpClient.Timeout = TimeSpan.FromSeconds(3);
+                        byte[] imageBytes = await httpClient.GetByteArrayAsync(Load_Data.InformationUser.avatar_url);
+                        using (var ms = new MemoryStream(imageBytes))
+                        {
+                            pictureBox.Image = Image.FromStream(ms);
+                        }
+                    }
+                }
+                else
+                {
+                    // Fallback: d�ng avatar m?c d?nh
+                    using (var httpClient = new HttpClient())
+                    {
+                        httpClient.Timeout = TimeSpan.FromSeconds(3);
+                        string defaultAvatarUrl = "http://160.191.245.144/doanNT106/DB/USER/avatar/5.jpg";
+                        byte[] imageBytes = await httpClient.GetByteArrayAsync(defaultAvatarUrl);
+                        using (var ms = new MemoryStream(imageBytes))
+                        {
+                            pictureBox.Image = Image.FromStream(ms);
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // N?u load fail, d? background tr?ng v?i ch? c�i d?u
+                pictureBox.BackColor = Color.WhiteSmoke;
+                Label lblInitial = new Label
+                {
+                    Text = username.Length > 0 ? username.Substring(0, 1).ToUpper() : "?",
+                    ForeColor = Color.Gray,
+                    Font = new Font("Segoe UI", 14, FontStyle.Bold),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    Dock = DockStyle.Fill,
+                    BackColor = Color.Transparent
+                };
+                pictureBox.Controls.Add(lblInitial);
+            }
+        }
+
+        // ========================================
+        // HELPER: Format timestamp d?p hon
+        // ========================================
+        private string FormatTimestamp(string timestamp)
+        {
+            try
+            {
+                if (long.TryParse(timestamp, out long unixTime))
+                {
+                    DateTimeOffset dateTimeOffset = DateTimeOffset.FromUnixTimeSeconds(unixTime);
+                    DateTime localTime = dateTimeOffset.LocalDateTime;
+                    
+                    TimeSpan diff = DateTime.Now - localTime;
+                    
+                    if (diff.TotalMinutes < 1)
+                        return "V?a xong";
+                    if (diff.TotalMinutes < 60)
+                        return $"{(int)diff.TotalMinutes} ph�t tru?c";
+                    if (diff.TotalHours < 24)
+                        return $"{(int)diff.TotalHours} gi? tru?c";
+                    if (diff.TotalDays < 7)
+                        return $"{(int)diff.TotalDays} ng�y tru?c";
+                    
+                    return localTime.ToString("dd/MM/yyyy HH:mm");
+                }
+                return timestamp;
+            }
+            catch
+            {
+                return timestamp;
+            }
+        }
+
+        // ========================================
+        // HANDLER N�T LIKE
         // ========================================
         private async void btn_like_Click(object sender, EventArgs e)
         {
@@ -644,7 +952,7 @@ namespace PostEZ.Main
 
             try
             {
-                // Disable button để tránh spam
+                // Disable button d? tr�nh spam
                 btn.Enabled = false;
 
                 var request = new
@@ -658,11 +966,11 @@ namespace PostEZ.Main
                 bool success = Load_Data.SendJson(request);
                 if (!success)
                 {
-                    MessageBox.Show("Không thể kết nối server!", "Lỗi");
+                    MessageBox.Show("Kh�ng th? k?t n?i server!", "L?i");
                     return;
                 }
 
-                // Đợi response với null check
+                // �?i response v?i null check
                 bool received = await Load_Data.WaitForServerResponse(
                     () => Load_Data.LikePostResponse.request_id != null && Load_Data.LikePostResponse.request_id.Contains("ServerHaha"),
                     timeoutSeconds: 5
@@ -670,26 +978,26 @@ namespace PostEZ.Main
 
                 if (received && Load_Data.LikePostResponse.accept)
                 {
-                    // Cập nhật UI
+                    // C?p nh?t UI
                     if (Load_Data.LikePostResponse.liked)
                     {
-                        btn.Text = $"❤️ {Load_Data.LikePostResponse.like_count}";
+                        btn.Text = $"?? {Load_Data.LikePostResponse.like_count}";
                         btn.ForeColor = Color.Red;
                     }
                     else
                     {
-                        btn.Text = $"🤍 {Load_Data.LikePostResponse.like_count}";
+                        btn.Text = $"?? {Load_Data.LikePostResponse.like_count}";
                         btn.ForeColor = Color.Gray;
                     }
                 }
                 else if (received)
                 {
-                    MessageBox.Show(Load_Data.LikePostResponse.error, "Lỗi");
+                    MessageBox.Show(Load_Data.LikePostResponse.error, "L?i");
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Lỗi: " + ex.Message, "Lỗi");
+                MessageBox.Show("L?i: " + ex.Message, "L?i");
             }
             finally
             {
@@ -698,7 +1006,7 @@ namespace PostEZ.Main
         }
 
         // ========================================
-        // HANDLER NÚT COMMENT
+        // HANDLER N�T COMMENT
         // ========================================
         private void btn_comment_Click(object sender, EventArgs e)
         {
@@ -707,24 +1015,24 @@ namespace PostEZ.Main
 
             try
             {
-                // Tìm post để lấy thông tin
+                // T�m post d? l?y th�ng tin
                 var post = Load_Data.Posts.FirstOrDefault(p => p.id == postId);
                 if (post == null)
                 {
-                    MessageBox.Show("Không tìm thấy bài viết!", "Lỗi");
+                    MessageBox.Show("Kh�ng t�m th?y b�i vi?t!", "L?i");
                     return;
                 }
 
-                // Mở form comment
+                // M? form comment
                 PostComment commentForm = new PostComment(postId, post.username, post.content);
                 commentForm.ShowDialog();
 
-                // Sau khi đóng form comment, refresh feed để cập nhật số lượng comment
+                // Sau khi d�ng form comment, refresh feed d? c?p nh?t s? lu?ng comment
                 _ = RefreshFeed();
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Lỗi: " + ex.Message, "Lỗi");
+                MessageBox.Show("L?i: " + ex.Message, "L?i");
             }
         }
 
@@ -747,7 +1055,7 @@ namespace PostEZ.Main
                 pictureBox.BackColor = Color.LightGray;
                 Label lblError = new Label
                 {
-                    Text = "❌ Không tải được ảnh",
+                    Text = "? Kh�ng t?i du?c ?nh",
                     ForeColor = Color.Red,
                     AutoSize = false,
                     TextAlign = ContentAlignment.MiddleCenter,
@@ -759,27 +1067,27 @@ namespace PostEZ.Main
         }
 
         //=============================================
-        //|||             KẾT THÚC TẠO POST         |||
+        //|||             K?T TH�C T?O POST         |||
         //=============================================
 
         private async void btn_main_Click(object sender, EventArgs e)
         {
-            // Refresh feed khi bấm nút Trang chủ
+            // Refresh feed khi b?m n�t Trang ch?
             await RefreshFeed();
         }
 
         /// <summary>
-        /// Refresh feed - Tải lại bài đăng mới từ server
+        /// Refresh feed - T?i l?i b�i dang m?i t? server
         /// </summary>
         private async Task RefreshFeed()
         {
             try
             {
-                // Disable button để tránh spam click
+                // Disable button d? tr�nh spam click
                 btn_main.Enabled = false;
-                btn_main.Text = "Đang tải...";
+                btn_main.Text = "�ang t?i...";
 
-                // Request lấy feed mới
+                // Request l?y feed m?i
                 Load_Data.getFeedResponse = new GetFeedResponse
                 {
                     action = "get_feed",
@@ -790,7 +1098,7 @@ namespace PostEZ.Main
                 bool success = Load_Data.SendJson(Load_Data.getFeedResponse);
                 if (!success)
                 {
-                    MessageBox.Show("Không thể kết nối server!", "Lỗi");
+                    MessageBox.Show("Kh�ng th? k?t n?i server!", "L?i");
                     return;
                 }
 
@@ -801,7 +1109,7 @@ namespace PostEZ.Main
 
                 if (!received)
                 {
-                    MessageBox.Show("Server không phản hồi!", "Lỗi");
+                    MessageBox.Show("Server kh�ng ph?n h?i!", "L?i");
                     return;
                 }
 
@@ -809,28 +1117,28 @@ namespace PostEZ.Main
                 {
                     Load_Data.Posts = Load_Data.getFeedResponse.posts;
                     await LoadPostsAsync();
-                    
-                    // Refresh thông tin user sau khi refresh feed
+
+                    // Refresh th�ng tin user sau khi refresh feed
                     await RefreshUserInfo();
                 }
                 else
                 {
-                    MessageBox.Show("Lỗi: " + Load_Data.getFeedResponse.error, "Lỗi");
+                    MessageBox.Show("L?i: " + Load_Data.getFeedResponse.error, "L?i");
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Lỗi refresh: " + ex.Message, "Lỗi");
+                MessageBox.Show("L?i refresh: " + ex.Message, "L?i");
             }
             finally
             {
                 btn_main.Enabled = true;
-                btn_main.Text = "Trang chủ";
+                btn_main.Text = "Trang ch?";
             }
         }
 
         /// <summary>
-        /// Refresh thông tin user - Cập nhật số bài đăng, follower
+        /// Refresh th�ng tin user - C?p nh?t s? b�i dang, follower
         /// </summary>
         private async Task RefreshUserInfo()
         {
@@ -858,7 +1166,7 @@ namespace PostEZ.Main
             }
             catch
             {
-                // Không hiển thị lỗi, chỉ refresh ngầm
+                // Kh�ng hi?n th? l?i, ch? refresh ng?m
             }
         }
 
@@ -868,8 +1176,8 @@ namespace PostEZ.Main
             this.Hide();
             profileForm.ShowDialog();
             this.Show();
-            
-            // Refresh thông tin user sau khi quay lại từ Profile
+
+            // Refresh th�ng tin user sau khi quay l?i t? Profile
             await RefreshUserInfo();
         }
 
@@ -878,10 +1186,29 @@ namespace PostEZ.Main
 
         }
 
-        private void lb_logout_Click(object sender, EventArgs e)
+        private async void lb_logout_Click(object sender, EventArgs e)
         {
-            Load_Data.LoginData.accept = false;
-            this.Close();
+            try
+            {
+                // G?i logout request v? server d? x�a session
+                bool logoutSuccess = await Load_Data.Logout();
+                
+                if (logoutSuccess)
+                {
+                    MessageBox.Show("�ang xu?t th�nh c�ng!", "Th�ng b�o");
+                }
+                
+                // ��ng form dashboard (quay v? login)
+                Load_Data.LoginData.accept = false;
+                this.Close();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("L?i khi dang xu?t: " + ex.Message, "L?i");
+                // V?n d�ng form d� c� l?i
+                Load_Data.LoginData.accept = false;
+                this.Close();
+            }
         }
 
         private void lb_username_Click(object sender, EventArgs e)
@@ -893,20 +1220,20 @@ namespace PostEZ.Main
 
         private void tb_find_TextChanged(object sender, EventArgs e)
         {
-            // Hủy timer cũ nếu có
+            // H?y timer cu n?u c�
             searchTimer?.Dispose();
 
-            // Tạo timer mới, delay 300ms
+            // T?o timer m?i, delay 300ms
             searchTimer = new System.Threading.Timer(_ =>
             {
-                // Đảm bảo toàn bộ logic chạy trên UI thread
+                // �?m b?o to�n b? logic ch?y tr�n UI thread
                 if (this.InvokeRequired)
                 {
                     this.BeginInvoke(new Action(async () =>
                     {
                         string searchText = tb_find.Text.Trim();
 
-                        // Thực hiện tìm kiếm
+                        // Th?c hi?n t�m ki?m
                         if (string.IsNullOrWhiteSpace(searchText))
                         {
                             await LoadPostsAsync();
@@ -941,12 +1268,20 @@ namespace PostEZ.Main
             Load_Data.Posts = originalPosts;
         }
 
-        // Cleanup khi đóng form
+        // Cleanup khi d�ng form
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
             autoRefreshTimer?.Dispose();
             searchTimer?.Dispose();
             base.OnFormClosing(e);
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            Message message = new Message();
+            this.Hide();
+            message.ShowDialog();
+            this.Show();
         }
     }
 }

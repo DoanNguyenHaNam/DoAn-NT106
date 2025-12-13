@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -14,7 +14,7 @@ using System.Net;
 namespace PostEZ
 {
     // ============================================
-    // BACKGROUND SERVICE - CHẠY NGẦM, KHÔNG HIỂN THỊ
+    // BACKGROUND SERVICE - CH?Y NG?M, KH�NG HI?N TH?
     // ============================================
     public partial class Load_Data : Form
     {
@@ -32,14 +32,14 @@ namespace PostEZ
         private static NetworkStream _stream;
         private static StreamReader _reader;
         private static StreamWriter _writer;
-        private static readonly object _writeLock = new object();  // ← STATIC
+        private static readonly object _writeLock = new object();  // ? STATIC
         private static string _host = "160.191.245.144";
         private static int _port = 13579;
 
 
 
         // ============================================
-        // GLOBAL DATA - LƯU TẤT CẢ DỮ LIỆU TỪ SERVER
+        // GLOBAL DATA - LUU T?T C? D? LI?U T? SERVER
         // ============================================
 
         public static List<Data_PostJson> Posts = new List<Data_PostJson>();
@@ -51,16 +51,20 @@ namespace PostEZ
         public static Data_InformationUserJson InformationUser = new Data_InformationUserJson();
         public static Data_PostJson CreatePost = new Data_PostJson();
         // ============================================
-        // THÊM MỚI - Biến global cho update avatar
+        // TH�M M?I - Bi?n global cho update avatar
         // ============================================
         public static Data_UpdateAvatarJson UpdateAvatar = new Data_UpdateAvatarJson();
         public static Data_LikePostJson LikePostResponse = new Data_LikePostJson();
         public static Data_AddCommentJson AddCommentResponse = new Data_AddCommentJson();
         public static Data_GetCommentsJson GetCommentsResponse = new Data_GetCommentsJson();
+        public static Data_GetOnlineUsersJson GetOnlineUsersResponse = new Data_GetOnlineUsersJson();
+        public static Data_GetMessagesJson GetMessagesResponse = new Data_GetMessagesJson();
+        public static Data_SendMessageJson SendMessageResponse = new Data_SendMessageJson();
+        public static Data_LogoutJson LogoutResponse = new Data_LogoutJson();
 
 
         // ============================================
-        // CONNECTION - KẾT NỐI VỚI SERVER
+        // CONNECTION - K?T N?I V?I SERVER
         // ============================================
         private async void Load_Data_Load(object sender, EventArgs e)
         {
@@ -91,10 +95,10 @@ namespace PostEZ
 
                 while (_isRunning)
                 {
-                    string line = _reader.ReadLine();   // server gửi JSON + '\n'
+                    string line = _reader.ReadLine();   // server g?i JSON + '\n'
                     if (line == null)
                     {
-                        // server đóng kết nối
+                        // server d�ng k?t n?i
                         break;
                     }
 
@@ -165,7 +169,7 @@ namespace PostEZ
                     }
                     break;
                 // ============================================
-                // THÊM MỚI - Xử lý response update avatar
+                // TH�M M?I - X? l� response update avatar
                 // ============================================
                 case "update_user_avatar":
                     var updateAvatarData = JsonConvert.DeserializeObject<Data_UpdateAvatarJson>(json);
@@ -175,7 +179,7 @@ namespace PostEZ
                     }
                     break;
                 // ============================================
-                // THÊM MỚI - Xử lý response Like bài viết
+                // TH�M M?I - X? l� response Like b�i vi?t
                 // ============================================
                 case "like_post":
                     var likeData = JsonConvert.DeserializeObject<Data_LikePostJson>(json);
@@ -185,7 +189,7 @@ namespace PostEZ
                     }
                     break;
                 // ============================================
-                // THÊM MỚI - Xử lý response thêm bình luận
+                // TH�M M?I - X? l� response th�m b�nh lu?n
                 // ============================================
                 case "add_comment":
                     var addCommentData = JsonConvert.DeserializeObject<Data_AddCommentJson>(json);
@@ -195,7 +199,7 @@ namespace PostEZ
                     }
                     break;
                 // ============================================
-                // THÊM MỚI - Xử lý response lấy bình luận
+                // TH�M M?I - X? l� response l?y b�nh lu?n
                 // ============================================
                 case "get_comments":
                     var getCommentsData = JsonConvert.DeserializeObject<Data_GetCommentsJson>(json);
@@ -204,8 +208,43 @@ namespace PostEZ
                         GetCommentsResponse = getCommentsData;
                     }
                     break;
+                // ============================================
+                // TH�M M?I - X? l� ph?n h?i t? c�c action m?i
+                // ============================================
+                case "get_online_users":
+                    var onlineUsersData = JsonConvert.DeserializeObject<Data_GetOnlineUsersJson>(json);
+                    if (onlineUsersData != null)
+                    {
+                        GetOnlineUsersResponse = onlineUsersData;
+                    }
+                    break;
+
+                case "get_messages":
+                    var messagesData = JsonConvert.DeserializeObject<Data_GetMessagesJson>(json);
+                    if (messagesData != null)
+                    {
+                        GetMessagesResponse = messagesData;
+                    }
+                    break;
+
+                case "send_message":
+                    var sendMsgData = JsonConvert.DeserializeObject<Data_SendMessageJson>(json);
+                    if (sendMsgData != null)
+                    {
+                        SendMessageResponse = sendMsgData;
+                    }
+                    break;
+
+                case "logout":
+                    var logoutData = JsonConvert.DeserializeObject<Data_LogoutJson>(json);
+                    if (logoutData != null)
+                    {
+                        LogoutResponse = logoutData;
+                    }
+                    break;
+
                 default:
-                    // Xử lý các hành động khác nếu cần
+                    // X? l� c�c h�nh d?ng kh�c n?u c?n
                     break;
             }
         }
@@ -214,8 +253,8 @@ namespace PostEZ
         { 
             try
             {
-                // TcpClient.Connected có thể trả true dù socket đã bị ngắt ở server side,
-                // nên kiểm tra thêm stream
+                // TcpClient.Connected c� th? tr? true d� socket d� b? ng?t ? server side,
+                // n�n ki?m tra th�m stream
                 return _client != null && _client.Connected &&
                        _stream != null && _stream.CanWrite &&
                        _writer != null;
@@ -237,8 +276,8 @@ namespace PostEZ
 
                 lock (_writeLock)
                 {
-                    // _writer được tạo trong TcpConnect với AutoFlush = true,
-                    // nhưng vẫn gọi Flush() để an toàn
+                    // _writer du?c t?o trong TcpConnect v?i AutoFlush = true,
+                    // nhung v?n g?i Flush() d? an to�n
                     _writer.WriteLine(json);
                     _writer.Flush();
                 }
@@ -247,8 +286,8 @@ namespace PostEZ
             }
             catch (Exception ex)
             {
-                // nếu muốn log, dùng PostEZ.Log hoặc Debug.WriteLine
-                // LogManager.Error(ex); // ví dụ
+                // n?u mu?n log, d�ng PostEZ.Log ho?c Debug.WriteLine
+                // LogManager.Error(ex); // v� d?
                 return false;
             }
         }
@@ -323,8 +362,8 @@ namespace PostEZ
             public string timestamp { get; set; }
             public bool accept { get; set; }
             public bool enabled { get; set; }
-            public int like_count { get; set; }  // ← THÊM like_count
-            public int comment_count { get; set; }  // ← THÊM comment_count
+            public int like_count { get; set; }  // ? TH�M like_count
+            public int comment_count { get; set; }  // ? TH�M comment_count
             public string error { get; set; }
 
             public string request_id { get; set; }
@@ -334,7 +373,6 @@ namespace PostEZ
         {
             public string action { get; set; }
             public string username { get; set; }
-            public string password { get; set; }
             public string email { get; set; }
             public string phone { get; set; }
             public string bio { get; set; }
@@ -405,7 +443,7 @@ namespace PostEZ
         }
 
         // ============================================
-        // THÊM MỚI - Class cho action update_user_avatar
+        // TH�M M?I - Class cho action update_user_avatar
         // ============================================
         public class Data_UpdateAvatarJson
         {
@@ -418,7 +456,7 @@ namespace PostEZ
         }
 
         // ============================================
-        // THÊM MỚI - Class cho action like_post
+        // TH�M M?I - Class cho action like_post
         // ============================================
         public class Data_LikePostJson
         {
@@ -441,7 +479,7 @@ namespace PostEZ
         }
 
         // ============================================
-        // THÊM MỚI - Class cho action add_comment
+        // TH�M M?I - Class cho action add_comment
         // ============================================
         public class Data_AddCommentJson
         {
@@ -458,7 +496,7 @@ namespace PostEZ
         }
 
         // ============================================
-        // THÊM MỚI - Class cho action get_comments
+        // TH�M M?I - Class cho action get_comments
         // ============================================
         public class Data_GetCommentsJson
         {
@@ -471,9 +509,65 @@ namespace PostEZ
             public string request_id { get; set; }
         }
 
+        // ============================================
+        // TH�M M?I - Classes cho Messenger
+        // ============================================
+        public class Data_MessageJson
+        {
+            public string message_id { get; set; }
+            public string from_user { get; set; }
+            public string to_user { get; set; }
+            public string content { get; set; }
+            public string timestamp { get; set; }
+        }
+
+        public class Data_GetOnlineUsersJson
+        {
+            public string action { get; set; }
+            public List<string> users { get; set; }
+            public string error { get; set; }
+            public bool accept { get; set; }
+            public string request_id { get; set; }
+        }
+
+        public class Data_GetMessagesJson
+        {
+            public string action { get; set; }
+            public List<Data_MessageJson> messages { get; set; }
+            public int count { get; set; }
+            public string error { get; set; }
+            public bool accept { get; set; }
+            public string request_id { get; set; }
+        }
+
+        public class Data_SendMessageJson
+        {
+            public string action { get; set; }
+            public string message_id { get; set; }
+            public string from_user { get; set; }
+            public string to_user { get; set; }
+            public string content { get; set; }
+            public string timestamp { get; set; }
+            public string error { get; set; }
+            public bool accept { get; set; }
+            public string request_id { get; set; }
+        }
+
+        // ============================================
+        // TH�M M?I - Class cho logout (x�a session tr�n server)
+        // ============================================
+        public class Data_LogoutJson
+        {
+            public string action { get; set; }
+            public string username { get; set; }
+            public string error { get; set; }
+            public bool accept { get; set; }
+            public string request_id { get; set; }
+        }
+
         public static async Task<bool> WaitForServerResponse(Func<bool> checkCondition, int timeoutSeconds = 10)
         {
-            int maxAttempts = timeoutSeconds * 10; // 10 lần mỗi giây (100ms mỗi lần)
+            int maxAttempts = timeoutSeconds * 10; // 10 l?n m?i gi�y (100ms m?i l?n)
             int attempts = 0;
 
             while (!checkCondition())
@@ -486,7 +580,7 @@ namespace PostEZ
                 await Task.Delay(100);
             }
 
-            return true; // Thành công
+            return true; // Th�nh c�ng
         }
 
         public static string GenerateRandomString(int length)
@@ -498,6 +592,36 @@ namespace PostEZ
             return new string(Enumerable.Repeat(chars, length)
               .Select(s => s[random.Next(s.Length)])
               .ToArray());
+        }
+
+        // ============================================
+        // TH�M M?I - H�m logout (g?i request x�a session v? server)
+        // ============================================
+        public static async Task<bool> Logout()
+        {
+            try
+            {
+                LogoutResponse = new Data_LogoutJson
+                {
+                    action = "logout",
+                    username = LoginData.username,
+                    request_id = GenerateRandomString(4)
+                };
+
+                bool sent = SendJson(LogoutResponse);
+                if (!sent) return false;
+
+                bool received = await WaitForServerResponse(
+                    () => LogoutResponse.request_id != null && LogoutResponse.request_id.Contains("ServerHaha"),
+                    timeoutSeconds: 5
+                );
+
+                return received && LogoutResponse.accept;
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }

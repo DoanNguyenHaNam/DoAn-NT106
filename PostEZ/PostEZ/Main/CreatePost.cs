@@ -392,12 +392,20 @@ namespace PostEZ.Main
                 else
                 {
                     // 3. Hiển thị thông báo upload xong
-                    MessageBox.Show("Upload file thành công!\n\n" +
-                        $"Ảnh: {(uploadedImageUrl != null ? "✅" : "❌")}\n" +
-                        $"Video: {(uploadedVideoUrl != null ? "✅" : "❌")}\n\n" +
-                        "Bạn có thể gửi request TCP để tạo bài đăng.",
-                        "Thông báo");
-
+                    if (Load_Data.CreatePost.error == "")
+                    {
+                        MessageBox.Show("Upload file thành công!\n\n" +
+                            $"Ảnh: {(uploadedImageUrl != null ? "✅" : "❌")}\n" +
+                            $"Video: {(uploadedVideoUrl != null ? "✅" : "❌")}\n\n" +
+                            "Bạn có thể gửi request TCP để tạo bài đăng.",
+                            "Thông báo"
+                        );
+                    }
+                    else
+                    {
+                        MessageBox.Show("Lỗi khi đăng bài: " + Load_Data.CreatePost.error, "Lỗi");
+                        return;
+                    }
                 }
 
                 // TODO: Sau này bạn sẽ viết code gửi TCP request tại đây

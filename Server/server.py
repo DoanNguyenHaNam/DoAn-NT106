@@ -34,7 +34,14 @@ USERS_FILE = os.path.join(DB_DIR, "users.json")
 SIGNUP_FILE = os.path.join(DB_DIR, "signup.json")
 POSTS_FILE = os.path.join(DB_DIR, "posts.json")
 COMMENTS_FILE = os.path.join(DB_DIR, "comments.json")
-LIKES_FILE = os.path.join(DB_DIR, "likes.json")  # ← THÊM FILE LIKES
+LIKES_FILE = os.path.join(DB_DIR, "likes.json")
+MESSAGES_FILE = os.path.join(DB_DIR, "messages.json")  # ← THÊM FILE MESSAGES
+
+# ============================================
+# THÊM MỚI - Quản lý sessions (chặn login nhiều lần)
+# ============================================
+ACTIVE_SESSIONS = {}  # {username: {"addr": addr, "login_time": timestamp}}
+SESSION_LOCK = threading.Lock()
 
 # Simple in-memory stores
 USERS = {
@@ -69,10 +76,24 @@ try:
 except Exception:
     pass
 
-LIKES = {}  # ← THÊM LIKES: {post_id: [username1, username2, ...]}
+LIKES = {}  # ← LIKES: {post_id: [username1, username2, ...]}
 try:
     with open(LIKES_FILE, 'r', encoding='utf-8') as f:
         LIKES = json.load(f)
+except Exception:
+    pass
+
+# ============================================
+# THÊM MỚI - MESSAGES: {message_id: {...}}
+# ============================================
+MESSAGES = {}  # {message_id: {from_user, to_user, content, timestamp}}
+MESSAGE_ID_SEQ = 1
+try:
+    with open(MESSAGES_FILE, 'r', encoding='utf-8') as f:
+        loaded_messages = json.load(f)
+        MESSAGES = loaded_messages
+        if MESSAGES:
+            MESSAGE_ID_SEQ = max([int(mid) for mid in MESSAGES.keys()]) + 1
 except Exception:
     pass
 
@@ -139,6 +160,11 @@ def save_all_data():
                 json.dump(LIKES, f, ensure_ascii=False, indent=2)
             log(f"Saved likes to {LIKES_FILE}", level="INFO")
             
+            # Save messages
+            with open(MESSAGES_FILE, 'w', encoding='utf-8') as f:
+                json.dump(MESSAGES, f, ensure_ascii=False, indent=2)
+            log(f"Saved {len(MESSAGES)} messages to {MESSAGES_FILE}", level="INFO")
+            
         log("All data saved successfully!", level="INFO")
     except Exception as e:
         log(f"Error saving data: {e}", level="ERROR")
@@ -155,38 +181,55 @@ def send_json_fileobj(f, obj: Dict[str, Any], addr=None):
 
 # ------------------ Handlers ------------------
 
-def handle_login_data(req: Dict[str, Any]):
-    # Accept only username == "Admin123" and password == "Admin123!"
+def handle_login_data(req: Dict[str, Any], addr=None):
+    """Handle login với kiểm tra session đã tồn tại"""
     username = req.get("username") or req.get("UserName") or req.get("User") or ""
     request_id = req.get("request_id") or ""
     password = req.get("password") or req.get("Password") or req.get("Pass") or ""
     username = "" if username is None else str(username)
     password = "" if password is None else str(password)
     error = "NO"
+    
     with LOCK:
         log(f"Login attempt: username='{username}', password='{password}'", level="INFO")
+        
+        # Kiểm tra username/password
+        is_valid = False
         if username in USER_SIGNUP:
             user_dir = "DB/user"
-            if not os.path.exists(user_dir):
-                os.makedirs(user_dir)
-                log(f"Created directory: {user_dir}", level="INFO")
-                    
-            # Lưu file user riêng
             user_file = os.path.join(user_dir, f"{username}.json")
-            with open(user_file, 'r', encoding='utf-8') as f:
-                user_data = json.load(f)
-            if password == user_data.get("password", ""):
-                accept = True
-                error = "Đăng Nhập Thành Công"
-            else:
-                accept = False
-                error = "Sai Mật Khẩu"
+            
+            if os.path.exists(user_file):
+                with open(user_file, 'r', encoding='utf-8') as f:
+                    user_data = json.load(f)
+                if password == user_data.get("password", ""):
+                    is_valid = True
+        elif username == "Admin123" and password == "Admin123!":
+            is_valid = True
+        
+        if not is_valid:
+            error = "Tên đăng nhập hoặc mật khẩu không đúng"
+            accept = False
         else:
-            accept = (username == "Admin123" and password == "Admin123!")
-            if accept:
-                error = "Đăng Nhập Thành Công"
-            else:
-                error = "Tên đăng nhập không tồn tại"
+            # ============================================
+            # KIỂM TRA SESSION ĐÃ TỒN TẠI CHƯA
+            # ============================================
+            with SESSION_LOCK:
+                if username in ACTIVE_SESSIONS:
+                    existing_session = ACTIVE_SESSIONS[username]
+                    log(f"User '{username}' already logged in from {existing_session['addr']}", level="WARN")
+                    error = f"⚠️ Tài khoản đang được đăng nhập từ {existing_session['addr']} lúc {time.strftime('%H:%M:%S', time.localtime(existing_session['login_time']))}.\nVui lòng đăng xuất trước khi đăng nhập lại!"
+                    accept = False
+                else:
+                    # Thêm session mới
+                    ACTIVE_SESSIONS[username] = {
+                        "addr": str(addr) if addr else "unknown",
+                        "login_time": time.time()
+                    }
+                    log(f"User '{username}' logged in successfully from {addr}", level="INFO")
+                    error = "Đăng Nhập Thành Công"
+                    accept = True
+        
         resp = {
             "action": "login_data",
             "username": username,
@@ -196,6 +239,28 @@ def handle_login_data(req: Dict[str, Any]):
             "request_id": f"ServerHaha_{request_id}"
         }
     return resp
+
+def handle_logout(req: Dict[str, Any]):
+    """Xử lý logout - xóa session"""
+    username = req.get("username") or req.get("UserName") or ""
+    
+    with SESSION_LOCK:
+        if username in ACTIVE_SESSIONS:
+            del ACTIVE_SESSIONS[username]
+            log(f"User '{username}' logged out", level="INFO")
+            return {
+                "action": "logout",
+                "username": username,
+                "error": "Đăng xuất thành công",
+                "accept": True
+            }
+        else:
+            return {
+                "action": "logout",
+                "username": username,
+                "error": "Session không tồn tại",
+                "accept": False
+            }
 
 def handle_signup_data(req: Dict[str, Any]):
     username = req.get("username") or req.get("UserName") or ""
@@ -365,22 +430,16 @@ def handle_create_post(req: Dict[str, Any]):
             "video_url": video_url,
             "timestamp": str(int(time.time())),
             "enabled": True,
-            "like_count": 0,  # ← THÊM like_count
-            "comment_count": 0,  # ← THÊM comment_count
+            "like_count": 0,
+            "comment_count": 0,
             "error": "",
             "accept": True,
             "request_id": ""
         }
         
-        # ========================================
-        # THÊM VÀO CUỐI POSTS (không phải đầu)
-        # ========================================
-        POSTS.append(post)  # ← Đổi từ insert(0) thành append()
+        POSTS.append(post)
         log(f"Created new post with id={pid} by user '{username}'", level="INFO")
         
-        # ========================================
-        # GHI NGAY VÀO posts.json
-        # ========================================
         try:
             if not os.path.exists(DB_DIR):
                 os.makedirs(DB_DIR)
@@ -392,29 +451,20 @@ def handle_create_post(req: Dict[str, Any]):
             log(f"Error saving posts.json: {e}", level="ERROR")
             traceback.print_exc()
         
-        # ========================================
-        # CẬP NHẬT VÀ GHI NGAY VÀO FILE USER
-        # ========================================
         user_dir = "DB/user"
         user_file = os.path.join(user_dir, f"{username}.json")
         
         if os.path.exists(user_file):
             try:
-                # Đọc dữ liệu user hiện tại
                 with open(user_file, 'r', encoding='utf-8') as f:
                     user_data = json.load(f)
                 
-                # Migrate posts sang posts_user nếu cần
                 if "posts" in user_data and "posts_user" not in user_data:
                     user_data["posts_user"] = user_data.pop("posts")
                 
-                # Đảm bảo có posts_user (dạng list)
                 if "posts_user" not in user_data:
                     user_data["posts_user"] = []
                 
-                # ========================================
-                # THÊM TOÀN BỘ THÔNG TIN POST VÀO posts_user
-                # ========================================
                 post_info = {
                     "id": pid,
                     "content": content,
@@ -424,15 +474,12 @@ def handle_create_post(req: Dict[str, Any]):
                     "enabled": True
                 }
                 
-                # Kiểm tra xem post_id đã tồn tại chưa
                 existing_post = next((p for p in user_data["posts_user"] if isinstance(p, dict) and p.get("id") == pid), None)
                 if not existing_post:
-                    user_data["posts_user"].append(post_info)  # ← Thêm vào cuối
+                    user_data["posts_user"].append(post_info)
                 
-                # Cập nhật count_posts
                 user_data["count_posts"] = len(user_data["posts_user"])
                 
-                # GHI NGAY VÀO FILE USER
                 with open(user_file, 'w', encoding='utf-8') as f:
                     json.dump(user_data, f, ensure_ascii=False, indent=2)
                 
@@ -450,38 +497,31 @@ def handle_get_feed(req: Dict[str, Any]):
     """Trả về posts theo yêu cầu - mặc định 10 posts gần nhất, hoặc tất cả nếu all=true"""
     limit = req.get("limit") or 10
     get_all = req.get("all") or req.get("All") or False
-    show_disabled = req.get("show_disabled") or False  # ← Thêm tùy chọn hiển thị post bị ẩn
+    show_disabled = req.get("show_disabled") or False
     
-    # Chuyển đổi limit sang int
     try:
         limit = int(limit)
     except:
         limit = 10
     
     with LOCK:
-        # Sắp xếp POSTS theo id giảm dần (ID lớn nhất → nhỏ nhất)
         sorted_posts = sorted(POSTS, key=lambda p: p.get("id", 0), reverse=True)
         
-        # Lọc post theo enabled (chỉ hiển thị post có enabled=True)
         if not show_disabled:
             sorted_posts = [p for p in sorted_posts if p.get("enabled", True)]
         
-        # Cập nhật like_count và comment_count cho mỗi post
         for post in sorted_posts:
             pid = str(post.get("id"))
             post["like_count"] = len(LIKES.get(pid, []))
             post["comment_count"] = len(COMMENTS.get(pid, []))
         
         if get_all:
-            # Trả về tất cả posts
             recent_posts = sorted_posts
             log(f"Sending ALL {len(recent_posts)} posts to client", level="INFO")
         else:
-            # Lấy số lượng posts theo limit
             recent_posts = sorted_posts[:limit] if len(sorted_posts) >= limit else sorted_posts[:]
             log(f"Sending {len(recent_posts)} recent posts (limit={limit}) to client", level="INFO")
     
-    # Trả về mảng posts
     resp = {
         "action": "get_feed",
         "posts": recent_posts,
@@ -523,7 +563,7 @@ def handle_previous_post_click(req: Dict[str, Any]):
         "image_url": chosen.get("image_url", ""),
         "video_url": chosen.get("video_url", ""),
         "timestamp": chosen.get("timestamp", ""),
-        "enabled": chosen.get("enabled", True),  # ← Thêm enabled
+        "enabled": chosen.get("enabled", True),
         "accept": True
     }
     return resp
@@ -586,7 +626,6 @@ def handle_update_user_avatar(req: Dict[str, Any]):
         user_dir = "DB/user"
         user_file = os.path.join(user_dir, f"{username}.json")
         
-        # Kiểm tra file có tồn tại không
         if not os.path.exists(user_file):
             log(f"User file not found: {user_file}", level="WARN")
             return {
@@ -598,17 +637,12 @@ def handle_update_user_avatar(req: Dict[str, Any]):
             }
         
         try:
-            # Đọc dữ liệu user hiện tại
             with open(user_file, 'r', encoding='utf-8') as f:
                 user_data = json.load(f)
             
-            # Lưu giá trị cũ để log
             old_avatar_url = user_data.get("avatar_url", "")
-            
-            # Cập nhật avatar_url
             user_data["avatar_url"] = new_avatar_url
             
-            # GHI NGAY VÀO FILE USER
             with open(user_file, 'w', encoding='utf-8') as f:
                 json.dump(user_data, f, ensure_ascii=False, indent=2)
             
@@ -663,7 +697,6 @@ def handle_like_post(req: Dict[str, Any]):
     with LOCK:
         pid = str(post_id)
         
-        # Tìm post trong POSTS
         post = None
         for p in POSTS:
             if str(p.get("id")) == pid:
@@ -681,27 +714,21 @@ def handle_like_post(req: Dict[str, Any]):
                 "accept": False
             }
         
-        # Khởi tạo danh sách like cho post nếu chưa có
         if pid not in LIKES:
             LIKES[pid] = []
         
-        # Toggle like
         if username in LIKES[pid]:
-            # Bỏ like
             LIKES[pid].remove(username)
             liked = False
             log(f"User '{username}' unliked post {pid}", level="INFO")
         else:
-            # Thêm like
             LIKES[pid].append(username)
             liked = True
             log(f"User '{username}' liked post {pid}", level="INFO")
         
-        # Cập nhật like_count trong post
         like_count = len(LIKES[pid])
         post["like_count"] = like_count
         
-        # Lưu ngay vào file
         try:
             with open(LIKES_FILE, 'w', encoding='utf-8') as f:
                 json.dump(LIKES, f, ensure_ascii=False, indent=2)
@@ -768,7 +795,6 @@ def handle_add_comment(req: Dict[str, Any]):
     with LOCK:
         pid = str(post_id)
         
-        # Tìm post trong POSTS
         post = None
         for p in POSTS:
             if str(p.get("id")) == pid:
@@ -787,11 +813,9 @@ def handle_add_comment(req: Dict[str, Any]):
                 "accept": False
             }
         
-        # Khởi tạo danh sách comment cho post nếu chưa có
         if pid not in COMMENTS:
             COMMENTS[pid] = []
         
-        # Tạo comment mới
         comment_id = len(COMMENTS[pid]) + 1
         timestamp = str(int(time.time()))
         
@@ -804,13 +828,11 @@ def handle_add_comment(req: Dict[str, Any]):
         
         COMMENTS[pid].append(comment)
         
-        # Cập nhật comment_count trong post
         comment_count = len(COMMENTS[pid])
         post["comment_count"] = comment_count
         
         log(f"User '{username}' commented on post {pid}: '{content}'", level="INFO")
         
-        # Lưu ngay vào file
         try:
             with open(COMMENTS_FILE, 'w', encoding='utf-8') as f:
                 json.dump(COMMENTS, f, ensure_ascii=False, indent=2)
@@ -850,10 +872,7 @@ def handle_get_comments(req: Dict[str, Any]):
     
     with LOCK:
         pid = str(post_id)
-        
-        # Lấy comments của post
         comments = COMMENTS.get(pid, [])
-        
         log(f"Loaded {len(comments)} comments for post {pid}", level="INFO")
         
         return {
@@ -866,7 +885,7 @@ def handle_get_comments(req: Dict[str, Any]):
         }
 
 def handle_get_user_info(req: Dict[str, Any]):
-    """Trả về thông tin user từ file DB/user/{username}.json"""
+    """Trả về thông tin user từ file DB/user/{username}.json - KHÔNG trả password"""
     username = req.get("username") or req.get("UserName") or req.get("user") or ""
     username = "" if username is None else str(username)
     
@@ -874,7 +893,6 @@ def handle_get_user_info(req: Dict[str, Any]):
         return {
             "action": "get_user_info",
             "username": "",
-            "password": "",
             "email": "",
             "phone": "",
             "bio": "",
@@ -890,13 +908,11 @@ def handle_get_user_info(req: Dict[str, Any]):
         user_dir = "DB/user"
         user_file = os.path.join(user_dir, f"{username}.json")
         
-        # Kiểm tra file có tồn tại không
         if not os.path.exists(user_file):
             log(f"User file not found: {user_file}", level="WARN")
             return {
                 "action": "get_user_info",
                 "username": username,
-                "password": "",
                 "email": "",
                 "phone": "",
                 "bio": "",
@@ -909,38 +925,35 @@ def handle_get_user_info(req: Dict[str, Any]):
             }
         
         try:
-            # Đọc dữ liệu user từ file
             with open(user_file, 'r', encoding='utf-8') as f:
                 user_data = json.load(f)
             
-            # Kiểm tra và migrate từ "posts" sang "posts_user" nếu cần
             if "posts" in user_data and "posts_user" not in user_data:
                 user_data["posts_user"] = user_data.pop("posts")
                 log(f"Migrated 'posts' to 'posts_user' for {username}", level="INFO")
             
-            # Kiểm tra xem có count_followers chưa, nếu chưa thì thêm vào
             if "count_followers" not in user_data:
                 user_data["count_followers"] = 0
                 log(f"Added count_followers to {user_file}", level="INFO")
             
-            # Đảm bảo có posts_user
             if "posts_user" not in user_data:
                 user_data["posts_user"] = []
                 log(f"Added posts_user to {user_file}", level="INFO")
             
-            # Lưu lại file nếu có thay đổi
             if "posts" in user_data or "count_followers" not in user_data or "posts_user" not in user_data:
                 with open(user_file, 'w', encoding='utf-8') as f:
                     json.dump(user_data, f, ensure_ascii=False, indent=2)
                 log(f"Updated user file {user_file}", level="INFO")
             
-            log(f"Loaded user info for '{username}'", level="INFO")
+            log(f"Loaded user info for '{username}' (password hidden)", level="INFO")
             
-            # Trả về thông tin user theo đúng thứ tự
+            # ============================================
+            # BỎ PASSWORD KHỎI RESPONSE VÌ LÝ DO BẢO MẬT
+            # ============================================
             resp = {
                 "action": "get_user_info",
                 "username": user_data.get("username", ""),
-                "password": user_data.get("password", ""),
+                # password BỊ XÓA - không trả về client
                 "email": user_data.get("email", ""),
                 "phone": user_data.get("phone", ""),
                 "bio": user_data.get("bio", ""),
@@ -959,7 +972,6 @@ def handle_get_user_info(req: Dict[str, Any]):
             return {
                 "action": "get_user_info",
                 "username": username,
-                "password": "",
                 "email": "",
                 "phone": "",
                 "bio": "",
@@ -971,9 +983,135 @@ def handle_get_user_info(req: Dict[str, Any]):
                 "accept": False
             }
 
+# ============================================
+# THÊM MỚI - MESSENGER HANDLERS
+# ============================================
+
+def handle_get_online_users(req: Dict[str, Any]):
+    """Lấy danh sách users đang online"""
+    username = req.get("username") or ""
+    
+    with SESSION_LOCK:
+        # Lấy tất cả users đang online
+        online_users = list(ACTIVE_SESSIONS.keys())
+        log(f"User '{username}' requested online users list: {online_users}", level="INFO")
+        
+        return {
+            "action": "get_online_users",
+            "users": online_users,
+            "count": len(online_users),
+            "error": "",
+            "accept": True
+        }
+
+def handle_send_message(req: Dict[str, Any]):
+    """Gửi tin nhắn từ user này sang user khác"""
+    global MESSAGE_ID_SEQ
+    
+    from_user = req.get("from_user") or req.get("username") or ""
+    to_user = req.get("to_user") or ""
+    content = req.get("content") or ""
+    
+    if not from_user or not to_user:
+        return {
+            "action": "send_message",
+            "message_id": "",
+            "from_user": from_user,
+            "to_user": to_user,
+            "content": content,
+            "timestamp": "",
+            "error": "From_user và to_user không được để trống",
+            "accept": False
+        }
+    
+    if not content:
+        return {
+            "action": "send_message",
+            "message_id": "",
+            "from_user": from_user,
+            "to_user": to_user,
+            "content": "",
+            "timestamp": "",
+            "error": "Nội dung tin nhắn không được để trống",
+            "accept": False
+        }
+    
+    with LOCK:
+        message_id = str(MESSAGE_ID_SEQ)
+        MESSAGE_ID_SEQ += 1
+        
+        timestamp = str(int(time.time()))
+        
+        message = {
+            "message_id": message_id,
+            "from_user": from_user,
+            "to_user": to_user,
+            "content": content,
+            "timestamp": timestamp
+        }
+        
+        MESSAGES[message_id] = message
+        
+        log(f"Message sent from '{from_user}' to '{to_user}': '{content}'", level="INFO")
+        
+        # Lưu ngay vào file
+        try:
+            with open(MESSAGES_FILE, 'w', encoding='utf-8') as f:
+                json.dump(MESSAGES, f, ensure_ascii=False, indent=2)
+            log(f"Saved messages after sending message {message_id}", level="INFO")
+        except Exception as e:
+            log(f"Error saving messages: {e}", level="ERROR")
+        
+        return {
+            "action": "send_message",
+            "message_id": message_id,
+            "from_user": from_user,
+            "to_user": to_user,
+            "content": content,
+            "timestamp": timestamp,
+            "error": "Gửi tin nhắn thành công",
+            "accept": True
+        }
+
+def handle_get_messages(req: Dict[str, Any]):
+    """Lấy tất cả tin nhắn giữa 2 users"""
+    from_user = req.get("from_user") or req.get("username") or ""
+    to_user = req.get("to_user") or ""
+    
+    if not from_user or not to_user:
+        return {
+            "action": "get_messages",
+            "messages": [],
+            "count": 0,
+            "error": "From_user và to_user không được để trống",
+            "accept": False
+        }
+    
+    with LOCK:
+        # Lọc tin nhắn giữa 2 users (cả 2 chiều)
+        conversation = []
+        for msg_id, msg in MESSAGES.items():
+            if (msg["from_user"] == from_user and msg["to_user"] == to_user) or \
+               (msg["from_user"] == to_user and msg["to_user"] == from_user):
+                conversation.append(msg)
+        
+        # Sắp xếp theo timestamp
+        conversation.sort(key=lambda x: int(x.get("timestamp", 0)))
+        
+        log(f"Loaded {len(conversation)} messages between '{from_user}' and '{to_user}'", level="INFO")
+        
+        return {
+            "action": "get_messages",
+            "messages": conversation,
+            "count": len(conversation),
+            "error": "",
+            "accept": True
+        }
+
 ACTION_HANDLERS = {
     "login": handle_login_data,
     "login_data": handle_login_data,
+    "logout": handle_logout,
     "signup": handle_signup_data,
     "signup_data": handle_signup_data,
     "createpost": handle_create_post,
@@ -996,6 +1134,13 @@ ACTION_HANDLERS = {
     "previous_post_click": handle_previous_post_click,
     "commentpreviouspostclick": handle_comment_previous_post_click,
     "comment_previous_post_click": handle_comment_previous_post_click,
+    # ← THÊM MESSENGER HANDLERS
+    "getonlineusers": handle_get_online_users,
+    "get_online_users": handle_get_online_users,
+    "sendmessage": handle_send_message,
+    "send_message": handle_send_message,
+    "getmessages": handle_get_messages,
+    "get_messages": handle_get_messages,
 }
 
 def process_request(jobj: Dict[str, Any], addr=None):
@@ -1012,7 +1157,11 @@ def process_request(jobj: Dict[str, Any], addr=None):
 
     try:
         log(f"Calling handler for action '{action}'", level="INFO", addr=addr if addr else None)
-        resp = handler(jobj)
+        # Truyền addr cho handle_login_data
+        if akey in ["login", "login_data"]:
+            resp = handler(jobj, addr)
+        else:
+            resp = handler(jobj)
         if not isinstance(resp, dict):
             log(f"Handler for {action} returned non-dict: {resp}", level="ERROR", addr=addr if addr else None)
             return {"action": "error", "message": "handler error", "accept": False}
@@ -1025,9 +1174,11 @@ def process_request(jobj: Dict[str, Any], addr=None):
 def client_thread(conn: socket.socket, addr):
     thr = threading.current_thread().name
     log(f"New client connected: {addr}", level="INFO")
+    
+    current_user = None  # Track user đang login
+    
     try:
         with conn:
-            # IMPORTANT: use encoding 'utf-8-sig' so BOM is removed when reading
             f = conn.makefile(mode="rw", encoding=ENC, newline="\n")
 
             while True:
@@ -1038,7 +1189,7 @@ def client_thread(conn: socket.socket, addr):
 
                 raw = line.rstrip("\n")
                 log(f"Received raw line from {addr}: {raw}", level="DEBUG")
-                # Extra check: remove any BOM char if still present
+                
                 if raw.startswith('\ufeff'):
                     log(f"Detected BOM at start of line from {addr}; stripping it", level="INFO")
                     raw = raw.lstrip('\ufeff')
@@ -1056,7 +1207,13 @@ def client_thread(conn: socket.socket, addr):
                     continue
 
                 resp_obj = process_request(jobj, addr=addr)
-                # copy request_id if provided
+                
+                # Track login thành công
+                action = jobj.get("action", "").lower()
+                if action in ["login", "login_data"] and resp_obj.get("accept"):
+                    current_user = jobj.get("username")
+                    log(f"Tracked current_user: {current_user}", level="INFO")
+                
                 rid = jobj.get("request_id") or jobj.get("RequestId") or jobj.get("requestId")
                 if rid is not None:
                     resp_obj["request_id"] = "ServerHaha_"+rid
@@ -1067,7 +1224,14 @@ def client_thread(conn: socket.socket, addr):
     except Exception as e:
         log(f"Exception with client {addr}: {e}", level="ERROR")
         traceback.print_exc()
-    log(f"Thread exiting for {addr}", level="INFO")
+    finally:
+        # Xóa session khi client disconnect
+        if current_user:
+            with SESSION_LOCK:
+                if current_user in ACTIVE_SESSIONS:
+                    del ACTIVE_SESSIONS[current_user]
+                    log(f"Removed session for '{current_user}' on disconnect", level="INFO")
+        log(f"Thread exiting for {addr}", level="INFO")
 
 def signal_handler(signum, frame):
     """Handle shutdown signals"""
@@ -1076,16 +1240,14 @@ def signal_handler(signum, frame):
     sys.exit(0)
 
 def start_server():
-    # Register cleanup handlers
     atexit.register(save_all_data)
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
     
-    # truncate log file on start
     if WRITE_LOG_FILE:
         try:
             with open(LOG_FILENAME, "w", encoding="utf-8") as f:
-                f.write("")  # clear
+                f.write("")
         except Exception:
             pass
 
