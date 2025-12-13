@@ -147,5 +147,10 @@ namespace PostEZ.Log
                 this.Show();
             }
         }
+
+        private void tb_username_TextChanged(object sender, EventArgs e)
+        {
+
+        }
     }
 }

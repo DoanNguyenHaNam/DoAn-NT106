@@ -105,7 +105,6 @@
             tb_password.PasswordChar = '*';
             tb_password.Size = new Size(278, 29);
             tb_password.TabIndex = 2;
-            tb_password.Text = "Nam123!@#";
             // 
             // label1
             // 
@@ -124,7 +123,7 @@
             tb_username.Name = "tb_username";
             tb_username.Size = new Size(278, 29);
             tb_username.TabIndex = 0;
-            tb_username.Text = "Haha123";
+            tb_username.TextChanged += tb_username_TextChanged;
             // 
             // pic_logo
             // 

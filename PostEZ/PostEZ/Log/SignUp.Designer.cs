@@ -198,7 +198,6 @@
             tb_username.Name = "tb_username";
             tb_username.Size = new Size(278, 29);
             tb_username.TabIndex = 0;
-            tb_username.Text = "Admin123";
             // 
             // SignUp
             // 
