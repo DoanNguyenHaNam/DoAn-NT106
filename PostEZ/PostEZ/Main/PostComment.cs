@@ -107,7 +107,7 @@ namespace PostEZ.Main
 
         private async void PostComment_Load(object sender, EventArgs e)
         {
-            await PostEZ.Log.Login.LoadFromUrl("https://pminmod.site/doannt106/logo.png", pic_logo);
+            await PostEZ.Log.Login.LoadFromUrl("https://raw.githubusercontent.com/DoanNguyenHaNam/DoAn-NT106/main/Sources_NotNecessery/Logo.png", pic_logo);
             await LoadComments();
         }
 

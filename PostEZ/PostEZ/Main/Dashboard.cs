@@ -29,7 +29,7 @@ namespace PostEZ.Main
 
         private async void Dashboard_Load(object sender, EventArgs e)
         {
-            await Login.LoadFromUrl("https://pminmod.site/doannt106/logo.png", pic_logo);
+            await Login.LoadFromUrl("https://raw.githubusercontent.com/DoanNguyenHaNam/DoAn-NT106/main/Sources_NotNecessery/Logo.png", pic_logo);
 
 
             // ========================================
@@ -254,7 +254,7 @@ namespace PostEZ.Main
             if (string.IsNullOrEmpty(url))
                 return false;
 
-            return url.Contains("160.191.245.144");
+            return url.Contains(Load_Data._host);
         }
 
         private bool IsValidVideoUrl(string? url)
@@ -787,7 +787,7 @@ namespace PostEZ.Main
                 using (var httpClient = new HttpClient())
                 {
                     httpClient.Timeout = TimeSpan.FromSeconds(3);
-                    string defaultAvatarUrl = "http://160.191.245.144/doanNT106/DB/USER/avatar/5.jpg";
+                    string defaultAvatarUrl = $"http://{Load_Data._host}/doanNT106/DB/USER/avatar/5.jpg";
                     byte[] imageBytes = await httpClient.GetByteArrayAsync(defaultAvatarUrl);
                     using (var ms = new MemoryStream(imageBytes))
                     {

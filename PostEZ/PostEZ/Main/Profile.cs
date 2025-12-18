@@ -12,6 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Label = System.Windows.Forms.Label;
+using PostEZ;
 
 namespace PostEZ.Main
 {
@@ -19,7 +20,7 @@ namespace PostEZ.Main
     {
         private readonly string _username;
         private Button? btnChangeAvatar;
-        private const string UPLOAD_API_URL = "http://160.191.245.144/doanNT106/upload.php";
+        private string UPLOAD_API_URL => $"http://{Load_Data._host}/doanNT106/upload.php";
 
         public Profile(string username)
         {
@@ -217,7 +218,7 @@ namespace PostEZ.Main
         {
             this.StartPosition = FormStartPosition.CenterScreen;
             
-            await Login.LoadFromUrl("https://pminmod.site/doannt106/logo.png", pic_logo);
+            await Login.LoadFromUrl("https://raw.githubusercontent.com/DoanNguyenHaNam/DoAn-NT106/main/Sources_NotNecessery/Logo.png", pic_logo);
             MakeCircular(pic_avatar);
             
             await LoadUserInfo();

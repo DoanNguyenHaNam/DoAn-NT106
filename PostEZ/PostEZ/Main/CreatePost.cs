@@ -21,7 +21,7 @@ namespace PostEZ.Main
         private string? uploadedImageUrl = null;
         private string? uploadedVideoUrl = null;
 
-        private const string UPLOAD_API_URL = "http://160.191.245.144/doanNT106/upload.php";
+        private string UPLOAD_API_URL => $"http://{Load_Data._host}/doanNT106/upload.php";
 
         public CreatePost()
         {
@@ -31,7 +31,7 @@ namespace PostEZ.Main
 
         private async void CreatePost_Load(object sender, EventArgs e)
         {
-            await Login.LoadFromUrl("https://pminmod.site/doannt106/logo.png", pic_logo);
+            await Login.LoadFromUrl("https://raw.githubusercontent.com/DoanNguyenHaNam/DoAn-NT106/main/Sources_NotNecessery/Logo.png", pic_logo);
             ResetForm();
         }
 

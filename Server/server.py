@@ -25,6 +25,19 @@ HOST = "0.0.0.0"
 PORT = 13579
 ENC = "utf-8-sig"  # <<-- use utf-8-sig so BOM is removed automatically
 
+def get_local_ip():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        local_ip = s.getsockname()[0]
+        s.close()
+        return local_ip
+    except Exception:
+        return "127.0.0.1"
+
+IP_INPUT = get_local_ip()
+print(f"{IP_INPUT}")
+
 VERBOSE_TO_CONSOLE = True
 WRITE_LOG_FILE = True
 LOG_FILENAME = "server_verbose.log"
@@ -309,7 +322,7 @@ def handle_signup_data(req: Dict[str, Any]):
                 accept = True
                 error = "Đăng Ký Thành Công"
                 random_avatar_num = random.randint(1, 5)
-                random_avatar_url = f"http://160.191.245.144/doanNT106/DB/USER/avatar/{random_avatar_num}.jpg"
+                random_avatar_url = f"http://{IP_INPUT}/doanNT106/DB/USER/avatar/{random_avatar_num}.jpg"
                 USER_SAVEDATA={
                     "username": username,
                     "password": password,
@@ -399,10 +412,10 @@ def handle_create_post(req: Dict[str, Any]):
             "request_id": ""
         }
 
-    # Validate video_url - chỉ cho phép YouTube hoặc IP máy chủ 160.191.245.144
+    # Validate video_url - chỉ cho phép YouTube hoặc IP máy chủ IP_INPUT
     if video_url:
         is_youtube = "youtube.com" in video_url.lower() or "youtu.be" in video_url.lower()
-        is_server = "160.191.245.144" in video_url
+        is_server = IP_INPUT in video_url
         
         if not (is_youtube or is_server):
             return {
@@ -414,7 +427,7 @@ def handle_create_post(req: Dict[str, Any]):
                 "video_url": video_url,
                 "timestamp": str(int(time.time())),
                 "enabled": False,
-                "error": "Video URL không hợp lệ. Chỉ chấp nhận link YouTube hoặc máy chủ 160.191.245.144",
+                "error": f"Video URL không hợp lệ. Chỉ chấp nhận link YouTube hoặc máy chủ {IP_INPUT}",
                 "accept": False,
                 "request_id": ""
             }

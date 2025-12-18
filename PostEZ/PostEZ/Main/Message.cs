@@ -31,7 +31,7 @@ namespace PostEZ.Main
         {
             try
             {
-                await Login.LoadFromUrl("https://pminmod.site/doannt106/logo.png", pic_logo);
+                await Login.LoadFromUrl("https://raw.githubusercontent.com/DoanNguyenHaNam/DoAn-NT106/main/Sources_NotNecessery/Logo.png", pic_logo);
 
                 SetupUsersListPanel();
                 SetupChatPanel();

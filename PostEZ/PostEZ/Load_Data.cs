@@ -33,7 +33,7 @@ namespace PostEZ
         private static StreamReader _reader;
         private static StreamWriter _writer;
         private static readonly object _writeLock = new object();
-        private static string _host = "160.191.245.144";
+        public static string _host = "160.191.245.144";
         private static int _port = 13579;
 
 
@@ -65,7 +65,7 @@ namespace PostEZ
         // ============================================
         private async void Load_Data_Load(object sender, EventArgs e)
         {
-            Login.LoadFromUrl("https://pminmod.site/doannt106/logo.png", pic_logo);
+            Login.LoadFromUrl("https://raw.githubusercontent.com/DoanNguyenHaNam/DoAn-NT106/main/Sources_NotNecessery/Logo.png", pic_logo);
             btn_login.Hide();
             btn_close.Hide();
         }

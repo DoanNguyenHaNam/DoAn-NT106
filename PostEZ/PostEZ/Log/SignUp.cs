@@ -22,7 +22,7 @@ namespace PostEZ.Log
 
         private void SignUp_Load(object sender, EventArgs e)
         {
-            Login.LoadFromUrl("https://pminmod.site/doannt106/logo.png", pic_logo);
+            Login.LoadFromUrl("https://raw.githubusercontent.com/DoanNguyenHaNam/DoAn-NT106/main/Sources_NotNecessery/Logo.png", pic_logo);
         }
 
         private void lb_login_Click(object sender, EventArgs e)
