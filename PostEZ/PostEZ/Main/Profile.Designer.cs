@@ -29,6 +29,7 @@
         private void InitializeComponent()
         {
             groupBox1 = new GroupBox();
+            btn_refresh = new Button();
             btn_profile = new Button();
             btn_main = new Button();
             pic_logo = new PictureBox();
@@ -40,7 +41,6 @@
             gb_posted = new GroupBox();
             btn_makepost = new Button();
             lb_count = new Label();
-            btn_refresh = new Button();
             groupBox1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pic_logo).BeginInit();
             gb_profile.SuspendLayout();
@@ -58,6 +58,15 @@
             groupBox1.Size = new Size(135, 426);
             groupBox1.TabIndex = 6;
             groupBox1.TabStop = false;
+            // 
+            // btn_refresh
+            // 
+            btn_refresh.Location = new Point(7, 225);
+            btn_refresh.Name = "btn_refresh";
+            btn_refresh.Size = new Size(122, 34);
+            btn_refresh.TabIndex = 3;
+            btn_refresh.Text = "Refresh";
+            btn_refresh.UseVisualStyleBackColor = true;
             // 
             // btn_profile
             // 
@@ -154,7 +163,7 @@
             btn_makepost.Name = "btn_makepost";
             btn_makepost.Size = new Size(407, 43);
             btn_makepost.TabIndex = 9;
-            btn_makepost.Text = "Post";
+            btn_makepost.Text = "Đăng bài";
             btn_makepost.UseVisualStyleBackColor = true;
             btn_makepost.Click += btn_makepost_Click;
             // 
@@ -167,15 +176,6 @@
             lb_count.Size = new Size(99, 21);
             lb_count.TabIndex = 10;
             lb_count.Text = "Số bài đăng: ";
-            // 
-            // btn_refresh
-            // 
-            btn_refresh.Location = new Point(7, 225);
-            btn_refresh.Name = "btn_refresh";
-            btn_refresh.Size = new Size(122, 34);
-            btn_refresh.TabIndex = 3;
-            btn_refresh.Text = "Refresh";
-            btn_refresh.UseVisualStyleBackColor = true;
             // 
             // Profile
             // 

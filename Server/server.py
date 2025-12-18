@@ -18,6 +18,7 @@ import atexit
 import signal
 import sys
 import os
+import random
 from typing import Dict, Any, Optional
 
 HOST = "0.0.0.0"
@@ -307,13 +308,15 @@ def handle_signup_data(req: Dict[str, Any]):
                 }
                 accept = True
                 error = "Đăng Ký Thành Công"
+                random_avatar_num = random.randint(1, 5)
+                random_avatar_url = f"http://160.191.245.144/doanNT106/DB/USER/avatar/{random_avatar_num}.jpg"
                 USER_SAVEDATA={
                     "username": username,
                     "password": password,
                     "email": email,
                     "phone": phone,
                     "bio": "Hello",
-                    "avatar_url": "http://160.191.245.144/doanNT106/DB/USER/avatar/5.jpg",
+                    "avatar_url": random_avatar_url,
                     "posts_user": [],
                     "count_posts": 0,
                     "count_followers": 0

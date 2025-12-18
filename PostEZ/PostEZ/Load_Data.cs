@@ -65,19 +65,9 @@ namespace PostEZ
         // ============================================
         private async void Load_Data_Load(object sender, EventArgs e)
         {
-            try
-            {
-                Thread TcpThread = new Thread(new ThreadStart(TcpConnect));
-                TcpThread.IsBackground = true;
-                TcpThread.Start();
-            }
-            catch (Exception ex)
-            {
-                return;
-            }
-            Login login = new Login();
-            this.Hide();
-            login.ShowDialog();
+            Login.LoadFromUrl("https://pminmod.site/doannt106/logo.png", pic_logo);
+            btn_login.Hide();
+            btn_close.Hide();
         }
         static void TcpConnect()
         {
@@ -231,7 +221,7 @@ namespace PostEZ
         }
 
         public static bool IsConnected()
-        { 
+        {
             try
             {
                 return _client != null && _client.Connected &&
@@ -545,7 +535,7 @@ namespace PostEZ
               .Select(s => s[random.Next(s.Length)])
               .ToArray());
         }
-        
+
         public static async Task<bool> Logout()
         {
             try
@@ -570,6 +560,40 @@ namespace PostEZ
             catch
             {
                 return false;
+            }
+        }
+
+        private void btn_connect_Click(object sender, EventArgs e)
+        {
+            if (tb_serverip.Text != "")
+            {
+                _host = tb_serverip.Text;
+            }
+            try
+            {
+                Thread TcpThread = new Thread(new ThreadStart(TcpConnect));
+                TcpThread.IsBackground = true;
+                TcpThread.Start();
+                Task.Delay(1000).Wait();
+                if (IsConnected())
+                {
+                    Login login = new Login();
+                    this.Hide();
+                    login.ShowDialog();
+                    this.Close();
+                    MessageBox.Show("Kết nối đến server thành công!");
+                }
+                else
+                {
+                    MessageBox.Show("Kết nối đến server thất bại!");
+                    return;
+                }
+
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi kết nối đến server: " + ex.Message);
+                return;
             }
         }
     }

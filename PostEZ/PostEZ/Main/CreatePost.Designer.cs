@@ -33,6 +33,7 @@
             pic_logo = new PictureBox();
             btn_main = new Button();
             groupBox2 = new GroupBox();
+            label1 = new Label();
             btn_post = new Button();
             btn_remove_video = new Button();
             lb_video_status = new Label();
@@ -42,7 +43,6 @@
             pic_preview = new PictureBox();
             btn_select_image = new Button();
             tb_content = new TextBox();
-            label1 = new Label();
             groupBox1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pic_logo).BeginInit();
             groupBox2.SuspendLayout();
@@ -108,6 +108,17 @@
             groupBox2.TabStop = false;
             groupBox2.Text = "Tạo bài đăng mới";
             // 
+            // label1
+            // 
+            label1.AutoSize = true;
+            label1.Font = new Font("Segoe UI", 10F);
+            label1.ForeColor = Color.Gray;
+            label1.Location = new Point(21, 270);
+            label1.Name = "label1";
+            label1.Size = new Size(590, 19);
+            label1.TabIndex = 9;
+            label1.Text = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━";
+            // 
             // btn_post
             // 
             btn_post.Font = new Font("Segoe UI", 14F, FontStyle.Bold);
@@ -134,7 +145,6 @@
             // 
             // lb_video_status
             // 
-            lb_video_status.AutoSize = false;
             lb_video_status.Font = new Font("Segoe UI", 10F);
             lb_video_status.ForeColor = Color.Gray;
             lb_video_status.Location = new Point(21, 296);
@@ -146,7 +156,7 @@
             // btn_select_video
             // 
             btn_select_video.Font = new Font("Segoe UI", 12F);
-            btn_select_video.Location = new Point(487, 264);
+            btn_select_video.Location = new Point(487, 289);
             btn_select_video.Name = "btn_select_video";
             btn_select_video.Size = new Size(124, 29);
             btn_select_video.TabIndex = 5;
@@ -169,7 +179,6 @@
             // 
             // lb_image_status
             // 
-            lb_image_status.AutoSize = false;
             lb_image_status.Font = new Font("Segoe UI", 10F);
             lb_image_status.ForeColor = Color.Gray;
             lb_image_status.Location = new Point(21, 247);
@@ -210,17 +219,6 @@
             tb_content.ScrollBars = ScrollBars.Vertical;
             tb_content.Size = new Size(590, 96);
             tb_content.TabIndex = 0;
-            // 
-            // label1
-            // 
-            label1.AutoSize = true;
-            label1.Font = new Font("Segoe UI", 10F);
-            label1.ForeColor = Color.Gray;
-            label1.Location = new Point(21, 264);
-            label1.Name = "label1";
-            label1.Size = new Size(447, 19);
-            label1.TabIndex = 9;
-            label1.Text = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━";
             // 
             // CreatePost
             // 

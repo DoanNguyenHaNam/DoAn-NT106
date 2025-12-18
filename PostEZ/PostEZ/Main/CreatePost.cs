@@ -382,10 +382,9 @@ namespace PostEZ.Main
                 {
                     if (Load_Data.CreatePost.error == "")
                     {
-                        MessageBox.Show("Upload file thành công!\n\n" +
+                        MessageBox.Show("Tạo bài đăng thành công!\n\n" +
                             $"Ảnh: {(uploadedImageUrl != null ? "✅" : "❌")}\n" +
-                            $"Video: {(uploadedVideoUrl != null ? "✅" : "❌")}\n\n" +
-                            "Bạn có thể gửi request TCP để tạo bài đăng.",
+                            $"Video: {(uploadedVideoUrl != null ? "✅" : "❌")}",
                             "Thông báo"
                         );
                     }
