@@ -35,15 +35,6 @@ Phương pháp này đơn giản nhất, không yêu cầu cài đặt Node.js h
 2.  **Cài đặt:** Chạy tệp `.exe` đã tải xuống và làm theo hướng dẫn.
 3.  **Khởi chạy:** Mở ứng dụng POSTEZ từ Desktop hoặc Start Menu.
 
-### 2. Dành cho Lập trình viên (Từ Mã Nguồn)
-
-Phương pháp này cho phép bạn tùy chỉnh, phát triển và chạy ứng dụng trên các nền tảng khác (Windows, macOS, Linux) bằng cách sử dụng **Node.js** (phiên bản $18+$).
-
-1.  **Clone Repository:** Mở Terminal (hoặc Git Bash) và sao chép mã nguồn:
-    ```bash
-    git clone [https://github.com/DoanNguyenHaNam/DoAn-NT106.git](https://github.com/DoanNguyenHaNam/DoAn-NT106.git)
-    cd DoAn-NT106
-    ```
 ### 2. Dành cho Lập trình viên (Từ Mã Nguồn - Python Server)
 
 Phương pháp này cho phép bạn tùy chỉnh, phát triển và chạy ứng dụng Backend (Server) trên các nền tảng (Windows, macOS, Linux) bằng cách sử dụng **Python** (phiên bản **$3.9+$** được yêu cầu).
